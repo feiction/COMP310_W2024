@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <unistd.h> 
-//#include <sys/stat.h> // these could be useful?
+#include <unistd.h> 
+#include <sys/stat.h>
 #include "shellmemory.h"
 #include "shell.h"
 
@@ -30,7 +30,7 @@ int quit();
 int set(char* var, char* value);
 int print(char* var);
 int run(char* script);
-int badcommandFileDoesNotExist();
+int echo(char *token);
 
 // Interpret commands and their arguments
 int interpreter(char* command_args[], int args_size){
@@ -60,10 +60,10 @@ int interpreter(char* command_args[], int args_size){
 		char value[800];						// up to 7 tokens of 100 characters, 800 to be safe
 		strcpy(value, command_args[2]);			// store string in value
 		for (i = 3; i < args_size; i++) {
-			strcat(value, " ");
-			strcat(value, command_args[i]);
+			strcat(value, " ");					// insert space
+			strcat(value, command_args[i]);		// add string to value
 		}
-		return set(command_args[1], value);		// return set(variable, string)
+		return set(command_args[1], value);		// return set(variable, value)
 
 	} else if (strcmp(command_args[0], "print")==0) {
 		//print
@@ -73,7 +73,11 @@ int interpreter(char* command_args[], int args_size){
 	} else if (strcmp(command_args[0], "run")==0) {
 		if (args_size != 2) return badcommand();
 		return run(command_args[1]);
-	
+
+	} else if (strcmp(command_args[0], "echo")==0){
+		if (args_size > 2) return badcommand();
+		return echo(command_args[1]);
+
 	} else return badcommand();
 }
 
@@ -135,4 +139,10 @@ int run(char* script){
     fclose(p);
 
 	return errCode;
+}
+
+int echo(char* var){
+	if(var[0] == '$') print(++var);
+	else printf("%s\n", var); 
+	return 0; 
 }
