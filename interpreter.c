@@ -31,6 +31,8 @@ int set(char* var, char* value);
 int print(char* var);
 int run(char* script);
 int echo(char *token);
+int my_ls();
+int my_mkdir(char* dirname);
 
 // Interpret commands and their arguments
 int interpreter(char* command_args[], int args_size){
@@ -78,6 +80,12 @@ int interpreter(char* command_args[], int args_size){
 		if (args_size > 2) return badcommand();
 		return echo(command_args[1]);
 
+	} else if (strcmp(command_args[0], "my_ls")==0) {
+		if (args_size > 1) return badcommand();
+		return my_ls();
+	} else if (strcmp(command_args[0], "my_mkdir")==0) {
+		if (args_size > 2) return badcommand();
+		return my_mkdir(command_args[1]);
 	} else return badcommand();
 }
 
@@ -147,4 +155,15 @@ int echo(char* var){
 	if(var[0] == '$') print(++var);
 	else printf("%s\n", var); 
 	return 0; 
+}
+
+int my_ls(){
+	int error = system("ls");
+	return error;
+}
+
+int my_mkdir(char *dirname){
+	// Create the directory with 0700 permissions
+	mkdir(dirname, 0700);
+	return 0;
 }
