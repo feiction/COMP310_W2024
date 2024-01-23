@@ -74,11 +74,8 @@ char *mem_get_value(char *var_in) {
 	int i;
 
 	for (i=0; i<1000; i++){
-		if (strcmp(shellmemory[i].var, var_in) == 0){
-
+		if (strcmp(shellmemory[i].var, var_in) == 0)
 			return strdup(shellmemory[i].value);
-		} 
 	}
-	return "Variable does not exist";
-
+	return NULL;
 }

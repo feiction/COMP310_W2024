@@ -112,7 +112,9 @@ int set(char* var, char* value){
 }
 
 int print(char* var){
-	printf("%s\n", mem_get_value(var)); 
+	char *value = mem_get_value(var);
+	if(value == NULL) value = "\n";
+	printf("%s\n", value); 
 	return 0;
 }
 
