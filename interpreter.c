@@ -19,6 +19,12 @@ int badcommandFileDoesNotExist(){
 	return 3;
 }
 
+// For set command only
+int badcommandSet(){
+	printf("%s\n", "Bad command: set");
+	return 4;
+}
+
 int help();
 int quit();
 int set(char* var, char* value);
@@ -30,7 +36,7 @@ int badcommandFileDoesNotExist();
 int interpreter(char* command_args[], int args_size){
 	int i;
 
-	if ( args_size < 1 || args_size > MAX_ARGS_SIZE){
+	if ( args_size < 1 || (args_size > MAX_ARGS_SIZE && strcmp(command_args[0], "set")!=0)){
 		return badcommand();
 	}
 
@@ -50,10 +56,17 @@ int interpreter(char* command_args[], int args_size){
 
 	} else if (strcmp(command_args[0], "set")==0) {
 		//set
-		if (args_size != 3) return badcommand();	
-		return set(command_args[1], command_args[2]);
-	
+		if (args_size < 3 || args_size > 7) return badcommandSet();
+		char value[800];						// up to 7 tokens of 100 characters, 800 to be safe
+		strcpy(value, command_args[2]);			// store string in value
+		for (i = 3; i < args_size; i++) {
+			strcat(value, " ");
+			strcat(value, command_args[i]);
+		}
+		return set(command_args[1], value);		// return set(variable, string)
+
 	} else if (strcmp(command_args[0], "print")==0) {
+		//print
 		if (args_size != 2) return badcommand();
 		return print(command_args[1]);
 	
