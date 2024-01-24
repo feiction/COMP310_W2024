@@ -25,6 +25,18 @@ int badcommandSet(){
 	return 4;
 }
 
+// For change directory command only
+int badcommandCD(){
+	printf("%s\n", "Bad command: my_cd");
+	return 5;
+}
+
+// For cat command only
+int badcommandCat(){
+	printf("%s\n", "Bad command: my_cat");
+	return 5;
+}
+
 int help();
 int quit();
 int set(char* var, char* value);
@@ -33,6 +45,10 @@ int run(char* script);
 int echo(char *token);
 int my_ls();
 int my_mkdir(char* dirname);
+int my_touch(char* filename);
+int my_cd(char* dirname);
+int my_cat(char* newfile);
+int badcommandFileDoesNotExist(); // ** this was in the original file **
 
 // Interpret commands and their arguments
 int interpreter(char* command_args[], int args_size){
@@ -83,9 +99,23 @@ int interpreter(char* command_args[], int args_size){
 	} else if (strcmp(command_args[0], "my_ls")==0) {
 		if (args_size > 1) return badcommand();
 		return my_ls();
+
 	} else if (strcmp(command_args[0], "my_mkdir")==0) {
-		if (args_size > 2) return badcommand();
+		if (args_size != 2) return badcommand(); // ** this i put != instead of > because if the command is just "my_mkdir" it runs
 		return my_mkdir(command_args[1]);
+
+	} else if (strcmp(command_args[0], "my_touch")==0) {
+		if (args_size != 2) return badcommand();
+		return my_touch(command_args[1]);
+
+	} else if (strcmp(command_args[0], "my_cd")==0) {
+		if (args_size != 2) return badcommand();
+		return my_cd(command_args[1]);
+
+	} else if (strcmp(command_args[0], "my_cat")==0) {
+		if (args_size != 2) return badcommand();
+		return my_cat(command_args[1]);
+
 	} else return badcommand();
 }
 
@@ -166,4 +196,31 @@ int my_mkdir(char *dirname){
 	// Create the directory with 0700 permissions
 	mkdir(dirname, 0700);
 	return 0;
+}
+
+int my_touch(char* filename){
+	FILE *newfile;
+	newfile = fopen(filename, "w");
+	return 0;
+}
+
+int my_cd(char* dirname){
+	if (chdir(dirname) == 0) return 0;
+	else return badcommandCD();
+}
+
+int my_cat(char* filename){
+	FILE *file = fopen(filename, "r");
+	if (file != NULL) {
+		int character;
+		while ((character = getc(file)) != EOF) {
+			putchar(character);
+		}
+		putchar('\n'); // do we need a new line? i added for visual
+    	fclose(file);
+    	return 0; 
+	} 
+	else {
+		badcommandCat();
+	}
 }
