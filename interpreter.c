@@ -34,7 +34,7 @@ int badcommandCD(){
 // For cat command only
 int badcommandCat(){
 	printf("%s\n", "Bad command: my_cat");
-	return 5;
+	return 6;
 }
 
 int help();
@@ -48,7 +48,6 @@ int my_mkdir(char* dirname);
 int my_touch(char* filename);
 int my_cd(char* dirname);
 int my_cat(char* newfile);
-int badcommandFileDoesNotExist(); // ** this was in the original file **
 
 // Interpret commands and their arguments
 int interpreter(char* command_args[], int args_size){
@@ -182,8 +181,10 @@ int run(char* script){
 }
 
 int echo(char* var){
-	if(var[0] == '$') print(++var);
-	else printf("%s\n", var); 
+	if (var[0] == '$')
+		print(++var);
+	else
+		printf("%s\n", var); 
 	return 0; 
 }
 
