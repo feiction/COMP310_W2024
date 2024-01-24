@@ -101,7 +101,7 @@ int interpreter(char* command_args[], int args_size){
 		return my_ls();
 
 	} else if (strcmp(command_args[0], "my_mkdir")==0) {
-		if (args_size != 2) return badcommand(); // ** this i put != instead of > because if the command is just "my_mkdir" it runs
+		if (args_size != 2) return badcommand();
 		return my_mkdir(command_args[1]);
 
 	} else if (strcmp(command_args[0], "my_touch")==0) {
@@ -188,19 +188,18 @@ int echo(char* var){
 }
 
 int my_ls(){
-	int error = system("ls");
-	return error;
+	return system("ls");
 }
 
 int my_mkdir(char *dirname){
 	// Create the directory with 0700 permissions
-	mkdir(dirname, 0700);
-	return 0;
+	return mkdir(dirname, 0700);
 }
 
 int my_touch(char* filename){
 	FILE *newfile;
 	newfile = fopen(filename, "w");
+    fclose(newfile);
 	return 0;
 }
 
