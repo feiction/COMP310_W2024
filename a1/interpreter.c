@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include "shellmemory.h"
 #include "shell.h"
+#include <stdbool.h>
 
 int MAX_ARGS_SIZE = 3;
 
@@ -37,6 +38,16 @@ int badcommandCat(){
 	return 6;
 }
 
+int badcommandEmptyif(){
+	printf("%s\n", "Empty if clause");
+	return 6;
+}
+
+int badcommandIf(){
+	printf("%s\n", "Bad command: if");
+	return 6;
+}
+
 int help();
 int quit();
 int set(char* var, char* value);
@@ -53,8 +64,11 @@ int my_cat(char* newfile);
 int interpreter(char* command_args[], int args_size){
 	int i;
 
-	if ( args_size < 1 || (args_size > MAX_ARGS_SIZE && strcmp(command_args[0], "set")!=0)){
+	if ( args_size < 1 ) {
 		return badcommand();
+	} else if (args_size > MAX_ARGS_SIZE) {
+		if ((strcmp(command_args[0], "set")!=0) && (strcmp(command_args[0], "if")!=0))
+			return badcommand();
 	}
 
 	for ( i=0; i<args_size; i++){ //strip spaces new line etc
@@ -74,7 +88,7 @@ int interpreter(char* command_args[], int args_size){
 	} else if (strcmp(command_args[0], "set")==0) {
 		//set
 		if (args_size < 3 || args_size > 7) return badcommandSet();
-		char value[800];						// up to 7 tokens of 100 characters, 800 to be safe
+		char value[800];						// up to 5 tokens of 100 characters, 800 to be safe
 		strcpy(value, command_args[2]);			// store string in value
 		for (i = 3; i < args_size; i++) {
 			strcat(value, " ");					// insert space
@@ -115,7 +129,60 @@ int interpreter(char* command_args[], int args_size){
 		if (args_size != 2) return badcommand();
 		return my_cat(command_args[1]);
 
-	} else return badcommand();
+	} else if (strcmp(command_args[0], "if") == 0) {
+        char* identifier1 = command_args[1];
+        char* op = command_args[2];
+        char* identifier2 = command_args[3];
+        char* then = command_args[4];
+		bool condition = false;
+		int else_index = -1;
+
+		if (strcmp(command_args[5], "fi") == 0) return badcommandEmptyif();
+		if (strcmp(op, "==") != 0 && strcmp(op, "!=") != 0) return badcommandIf();
+
+		// Get values of identifiers if they're variables
+		if (identifier1[0] == '$') {
+			char *value = mem_get_value(++identifier1);
+			if (value == NULL) return badcommandIf();
+			identifier1 = value;
+		}
+		if (identifier2[0] == '$') {
+			char *value = mem_get_value(++identifier2);
+			if (value == NULL) return badcommandIf();
+			identifier2 = value;
+		}
+
+		condition = (strcmp(identifier1, identifier2) == 0 && strcmp(op, "==") == 0) ||
+                        (strcmp(identifier1, identifier2) != 0 && strcmp(op, "!=") == 0);
+		
+		char command[800];											// up to 5 tokens of 100 characters, 800 to be safe
+
+		// Find else index
+		for (i = 5; i < args_size; i++) {
+			if (strcmp(command_args[i], "else")==0) {
+				else_index = i;
+				break;
+			}
+		}
+		if (else_index == -1) return badcommandIf();				// no else found in if command
+
+		// Execute appropriate command
+		if (condition) {
+			strcpy(command, command_args[5]);						// store string in command
+			for (i = 6; i < else_index; i++) {
+				strcat(command, " ");								// insert space
+				strcat(command, command_args[i]);					// add string to command
+			}
+			parseInput(command);
+		} else {
+			strcpy(command, command_args[else_index + 1]);
+			for (i = (else_index + 2); i < (args_size - 1); i++) {
+				strcat(command, " ");								// insert space
+				strcat(command, command_args[i]);					// add string to command
+			}
+			parseInput(command);
+		}
+    } else return badcommand();
 }
 
 int help(){
@@ -189,8 +256,7 @@ int echo(char* var){
 }
 
 int my_ls(){
-	system("ls");
-	return 0;
+	return system("ls");		// returns 0 on success
 }
 
 int my_mkdir(char *dirname){
