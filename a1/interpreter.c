@@ -38,6 +38,13 @@ int badcommandCat(){
 	return 6;
 }
 
+// For wc command only
+int badcommandWC(){
+	printf("%s\n", "Bad command: my_wc");
+	return 7;
+}
+
+// For if commands
 int badcommandEmptyif(){
 	printf("%s\n", "Empty if clause");
 	return 6;
@@ -59,6 +66,7 @@ int my_mkdir(char* dirname);
 int my_touch(char* filename);
 int my_cd(char* dirname);
 int my_cat(char* newfile);
+int my_wc(char* filename);
 
 // Interpret commands and their arguments
 int interpreter(char* command_args[], int args_size){
@@ -182,7 +190,10 @@ int interpreter(char* command_args[], int args_size){
 			}
 			parseInput(command);
 		}
-    } else return badcommand();
+    } else if (strcmp(command_args[0], "my_wc") == 0) {
+		if (args_size != 2) return badcommand();
+		return my_wc(command_args[1]);
+	} else return badcommand();
 }
 
 int help(){
@@ -287,7 +298,38 @@ int my_cat(char* filename){
     	fclose(file);
     	return 0; 
 	} 
-	else {
-		badcommandCat();
-	}
+	else return badcommandCat();
+}
+
+int my_wc(char* filename) {
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) return badcommandWC();
+    
+
+    int lines = 0, words = 0, characters = 0;
+    int character;
+    int inWord = 0;
+
+    while ((character = getc(file)) != EOF) {
+        characters++;
+
+        // Check for newline character
+        if (character == '\n') {
+            lines++;
+        }
+
+        // Check for whitespace to track words
+        if (character == ' ' || character == '\t' || character == '\n') {
+            inWord = 0;
+        } else if (inWord == 0) {
+            inWord = 1;
+            words++;
+        }
+    }
+
+    fclose(file);
+
+    printf("Lines: %d\nWords: %d\nCharacters: %d\n", lines, words, characters);
+
+    return 0;
 }
