@@ -189,7 +189,8 @@ int echo(char* var){
 }
 
 int my_ls(){
-	return system("ls | sort");
+	system("ls");
+	return 0;
 }
 
 int my_mkdir(char *dirname){
