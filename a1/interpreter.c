@@ -295,7 +295,7 @@ int my_cat(char* filename){
 		while ((character = getc(file)) != EOF) {
 			putchar(character);
 		}
-		putchar('\n'); // do we need a new line? i added for visual
+		// putchar('\n'); // do we need a new line? i added for visual
     	fclose(file);
     	return 0; 
 	} 
