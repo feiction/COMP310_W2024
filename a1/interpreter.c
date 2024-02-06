@@ -1,3 +1,5 @@
+// Felicia Chen 261044333
+// Christine Pan 260986437
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -295,7 +297,7 @@ int my_cat(char* filename){
 		while ((character = getc(file)) != EOF) {
 			putchar(character);
 		}
-		// putchar('\n'); // do we need a new line? i added for visual
+		
     	fclose(file);
     	return 0; 
 	} 

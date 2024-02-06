@@ -1,3 +1,6 @@
+// Felicia Chen 261044333
+// Christine Pan 260986437
+
 #include<stdlib.h>
 #include<string.h>
 #include<stdio.h>
