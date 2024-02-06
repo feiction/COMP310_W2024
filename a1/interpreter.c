@@ -132,11 +132,11 @@ int interpreter(char* command_args[], int args_size){
 		return my_touch(command_args[1]);
 
 	} else if (strcmp(command_args[0], "my_cd")==0) {
-		if (args_size != 2) return badcommand();
+		if (args_size != 2) return badcommandCD();
 		return my_cd(command_args[1]);
 
 	} else if (strcmp(command_args[0], "my_cat")==0) {
-		if (args_size != 2) return badcommand();
+		if (args_size != 2) return badcommandCat();
 		return my_cat(command_args[1]);
 
 	} else if (strcmp(command_args[0], "if") == 0) {
@@ -274,8 +274,7 @@ int my_ls(){
 }
 
 int my_mkdir(char *dirname){
-	// Create the directory with 0700 permissions
-	return mkdir(dirname, 0700);
+	return mkdir(dirname, 0700);	// Create the directory with 0700 permissions
 }
 
 int my_touch(char* filename){
