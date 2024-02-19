@@ -13,6 +13,20 @@ struct memory_struct{
 
 struct memory_struct shellmemory[SHELL_MEM_LENGTH];
 
+struct frame_struct {
+    char *fileID;
+    char *line;
+};
+
+// Variable structure
+struct variable_struct {
+    char *var;
+    char *value;
+};
+
+struct frame_struct shellmemory_frame[SHELL_MEM_LENGTH / 3]; 
+struct variable_struct shellmemory_variable[SHELL_MEM_LENGTH - (SHELL_MEM_LENGTH / 3)];
+
 // Helper functions
 int match(char *model, char *var) {
 	int i, len=strlen(var), matchCount=0;
@@ -44,6 +58,13 @@ void mem_init(){
 		shellmemory[i].var = "none";
 		shellmemory[i].value = "none";
 	}
+}
+
+void mem_init_variable(){
+	for (int i = 0; i < (SHELL_MEM_LENGTH - (SHELL_MEM_LENGTH / 3)); i++) {
+        shellmemory[i].var = "none";
+        shellmemory[i].value = "none";
+    }
 }
 
 // Set key value pair
