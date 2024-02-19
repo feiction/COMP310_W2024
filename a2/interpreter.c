@@ -159,8 +159,7 @@ run SCRIPT.TXT		Executes the file SCRIPT.TXT\n ";
 int quit(){
 	printf("%s\n", "Bye!");
 	ready_queue_destory();
-	char *directoryName = "backing_store";
-    my_rmdir(directoryName);
+    system("rm -rf ./backing_store");
 	exit(0);
 }
 
