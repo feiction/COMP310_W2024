@@ -12,9 +12,11 @@ int MAX_USER_INPUT = 1000;
 int parseInput(char ui[]);
 
 int main(int argc, char *argv[]) {
-	printf("%s\n", "Shell v2.0\n");
+    system("rm -rf ./backing_store");
+    system("mkdir ./backing_store");
+    printf("%s\n", "Shell v2.0\n");
 
-	char prompt = '$';  				// Shell prompt
+    char prompt = '$';  				// Shell prompt
 	char userInput[MAX_USER_INPUT];		// user's input stored here
 	int errorCode = 0;					// zero means no error, default
 
