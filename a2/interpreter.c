@@ -41,6 +41,7 @@ int run(char* script);
 int echo(char* var);
 int my_ls();
 int my_mkdir(char* dirname);
+int my_rmdir(char* dirname);
 int my_touch(char* filename);
 int my_cd(char* dirname);
 int exec(char *fname1, char *fname2, char *fname3); //, char* policy, bool background, bool mt);
@@ -154,6 +155,8 @@ run SCRIPT.TXT		Executes the file SCRIPT.TXT\n ";
 int quit(){
 	printf("%s\n", "Bye!");
 	ready_queue_destory();
+	char *directoryName = "backing_store";
+    my_rmdir(directoryName);
 	exit(0);
 }
 
@@ -201,6 +204,29 @@ int my_mkdir(char *dirname){
 	int errCode = system(command);
 	free(command);
 	return errCode;
+}
+
+// remove dir inspired by make dir
+int my_rmdir(char *dirname) {
+    char *dir = dirname;
+
+    if (dirname[0] == '$') {
+        char *value = mem_get_value(++dirname);
+        if (value == NULL || strchr(value, ' ') != NULL) {
+            return handle_error(ERROR_RMDIR);
+        }
+        dir = value;
+    }
+
+    int namelen = strlen(dir);
+    char *command = (char *)calloc(1, 7 + namelen);
+    strncat(command, "rmdir ", 7);
+    strncat(command, dir, namelen);
+    
+    int errCode = system(command);
+    free(command);
+
+    return errCode;
 }
 
 int my_touch(char* filename){

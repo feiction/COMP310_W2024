@@ -10,7 +10,7 @@
 
 int MAX_USER_INPUT = 1000;
 int parseInput(char ui[]);
-
+int my_mkdir(char *dirname);
 int main(int argc, char *argv[]) {
 	printf("%s\n", "Shell v2.0\n");
 
@@ -24,6 +24,9 @@ int main(int argc, char *argv[]) {
 	
 	//init shell memory
 	mem_init();
+
+    char *directoryName = "backing_store";
+    int result = my_mkdir(directoryName);
 
 	while(1) {						
         if (isatty(fileno(stdin))) printf("%c ",prompt);
