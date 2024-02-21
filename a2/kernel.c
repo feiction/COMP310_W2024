@@ -24,6 +24,10 @@ int process_initialize(char *filename){
     if(fp == NULL){
 		return FILE_DOES_NOT_EXIST;
     }
+    int copy_to_backing = copyScript(filename);
+    if(copy_to_backing != 0){
+        return FILE_ERROR;
+    }
     int error_code = load_file(fp, start, end, filename);
     if(error_code != 0){
         fclose(fp);

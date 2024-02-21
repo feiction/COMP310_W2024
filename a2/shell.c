@@ -2,18 +2,20 @@
 #include <stdlib.h>
 #include <string.h> 
 #include <unistd.h>
+#include <sys/stat.h>
 #include "interpreter.h"
 #include "shellmemory.h"
 #include "pcb.h"
 #include "kernel.h"
 #include "shell.h"
+#include <libgen.h>
 
 int MAX_USER_INPUT = 1000;
 int parseInput(char ui[]);
 int my_mkdir(char *dirname);
 int main(int argc, char *argv[]) {
     system("rm -rf ./backing_store");
-    system("mkdir ./backing_store");
+    mkdir("./backing_store/", 0700);
     printf("%s\n", "Shell v2.0\n");
 
     char prompt = '$';  				// Shell prompt
@@ -81,4 +83,39 @@ int parseInput(char *ui) {
     }
     errorCode = interpreter(words, w);
     return errorCode;
+}
+
+int copyScript(char *filename) {
+    FILE *scriptFile, *backingStoreFile;
+    char ch;
+    printf("The string is: %s\n", filename);
+    scriptFile = fopen(filename, "r");
+    if (scriptFile == NULL) {
+        perror("Error opening script file");
+        return 1;
+    }
+    const char *directoryName = "backing_store/";
+    const char *scriptBaseName = basename(strdup(filename));
+
+
+    char newFilename[256];
+    snprintf(newFilename, sizeof(newFilename), "%s%s", directoryName, scriptBaseName);
+    printf("The string is: %s\n", newFilename);
+
+
+    backingStoreFile = fopen(newFilename, "w");
+    
+    if (backingStoreFile == NULL) {
+        perror("Error creating new file in the backing store");
+        fclose(scriptFile);
+        return 1;
+    }
+    while ((ch = fgetc(scriptFile)) != EOF) {
+        fputc(ch, backingStoreFile);
+    }
+    printf("Here1");
+    fclose(scriptFile);
+    fclose(backingStoreFile);
+    printf("Here2");
+    return 0;
 }
