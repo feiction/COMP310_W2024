@@ -14,10 +14,25 @@ int generatePID(){
 PCB* makePCB(int start, int end){
     PCB * newPCB = malloc(sizeof(PCB));
     newPCB->pid = generatePID();
-    newPCB->PC = start;
+    newPCB->PC = 0;
     newPCB->start  = start;
     newPCB->end = end;
     newPCB->job_length_score = 1+end-start;
     newPCB->priority = false;
     return newPCB;
+
+    for (int i = 0; i < MAX_PAGES / 3; i++) {
+        newPCB->pagetable[i] = -1;
+    }
+
+    return newPCB;
+}
+
+int getPageIdx(PCB* pcb) {
+    for (int i = 9; i >= 0; i--) {
+        if (pcb->pagetable[i] != -1) {
+            return i + 1;
+        }
+    }
+    return 0;
 }
