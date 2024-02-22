@@ -2,6 +2,8 @@
 #include<string.h>
 #include<stdio.h>
 #include<stdbool.h>
+#include <dirent.h>
+#include "pcb.h"
 
 #define SHELL_MEM_LENGTH 1000
 
@@ -16,16 +18,16 @@ struct memory_struct shellmemory[SHELL_MEM_LENGTH];
 struct frame_struct {
     char *fileID;
     char *line;
+	int free;
 };
 
-// Variable structure
 struct variable_struct {
     char *var;
     char *value;
 };
 
-struct frame_struct shellmemory_frame[SHELL_MEM_LENGTH / 3]; 
-struct variable_struct shellmemory_variable[SHELL_MEM_LENGTH - (SHELL_MEM_LENGTH / 3)];
+struct frame_struct frame_store[SHELL_MEM_LENGTH / 3]; 
+struct variable_struct variable_store[SHELL_MEM_LENGTH - (SHELL_MEM_LENGTH / 3)];
 
 // Helper functions
 int match(char *model, char *var) {
@@ -178,6 +180,13 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 			{
 				continue;
 			}
+			for (int k = 0; k < SHELL_MEM_LENGTH / 3; k++) {
+				if (frame_store[k].fileID == NULL) {
+					frame_store[k].fileID = strdup(filename);
+					frame_store[k].line = strdup(line);
+					break;
+				}
+   	 		}	
 			shellmemory[j].var = strdup(filename);
             shellmemory[j].value = strndup(line, strlen(line));
 			free(line);
@@ -199,10 +208,14 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 }
 
 
-
 char * mem_get_value_at_line(int index){
 	if(index<0 || index > SHELL_MEM_LENGTH) return NULL; 
 	return shellmemory[index].value;
+}
+
+char *frame_get_line(int index) {
+    if (index < 0 || index >= SHELL_MEM_LENGTH / 3) return NULL; 
+    return frame_store[index].line;
 }
 
 void mem_free_lines_between(int start, int end){

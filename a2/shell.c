@@ -113,9 +113,9 @@ int copyScript(char *filename) {
     while ((ch = fgetc(scriptFile)) != EOF) {
         fputc(ch, backingStoreFile);
     }
-    printf("Here1");
+
     fclose(scriptFile);
     fclose(backingStoreFile);
-    printf("Here2");
+
     return 0;
 }
