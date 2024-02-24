@@ -142,7 +142,6 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
     int error_code = 0;
 	bool hasSpaceLeft = false;
 	bool flag = true;
-	bool isFirstLine = true;
 	i=0;
 	size_t candidate;
 	while(flag){
@@ -170,30 +169,22 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 	}
     
     
-    for (size_t j = i; j < SHELL_MEM_LENGTH; j++) {
+    for (size_t j = i; j < THRESHOLD; j++) {
         if(feof(fp)) {
             *pEnd = (int)j-1;
             break;
         } else {
-            line = calloc(1, SHELL_MEM_LENGTH);
-            if (fgets(line, SHELL_MEM_LENGTH, fp) == NULL) {
+            line = calloc(1, THRESHOLD);
+            if (fgets(line, THRESHOLD, fp) == NULL) {
                 continue;
             }
-
-            if (isFirstLine) {
-				isFirstLine = false;
-                while (j % 3 != 0) {
-                    j++;
-                }
-
-            }
-
+			
             shellmemory[j].var = strdup(filename);
             shellmemory[j].value = strndup(line, strlen(line));
             free(line);
         }
     }
-	printf("here");
+
 	//no space left to load the entire file into shell memory
 	if (!feof(fp)) {
 		error_code = 21;
@@ -204,8 +195,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 		}
 		return error_code;
 	}
-	printf("here3");
-	printShellMemory();
+
     return error_code;
 }
 
