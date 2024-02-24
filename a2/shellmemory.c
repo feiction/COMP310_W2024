@@ -15,7 +15,15 @@ struct memory_struct{
 
 struct memory_struct shellmemory[SHELL_MEM_LENGTH];
 
+#if defined(FRAME_STORE_SIZE)
+#else
 const int FRAME_STORE_SIZE = 18;
+#endif
+#if defined(VAR_STORE_SIZE)
+#else
+const int VAR_STORE_SIZE = 10;
+#endif
+
 const int FRAME_SIZE = 3;
 const int THRESHOLD = FRAME_STORE_SIZE * FRAME_STORE_SIZE;
 
@@ -134,6 +142,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
     int error_code = 0;
 	bool hasSpaceLeft = false;
 	bool flag = true;
+	bool isFirstLine = true;
 	i=0;
 	size_t candidate;
 	while(flag){
@@ -160,34 +169,42 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 		return error_code;
 	}
     
-    for (size_t j = i; j < SHELL_MEM_LENGTH; j++){
-        if(feof(fp))
-        {
+    
+    for (size_t j = i; j < SHELL_MEM_LENGTH; j++) {
+        if(feof(fp)) {
             *pEnd = (int)j-1;
             break;
-        }else{
-			line = calloc(1, SHELL_MEM_LENGTH);
-			if (fgets(line, SHELL_MEM_LENGTH, fp) == NULL)
-			{
-				continue;
-			}
+        } else {
+            line = calloc(1, SHELL_MEM_LENGTH);
+            if (fgets(line, SHELL_MEM_LENGTH, fp) == NULL) {
+                continue;
+            }
 
-			shellmemory[j].var = strdup(filename);
+            if (isFirstLine) {
+				isFirstLine = false;
+                while (j % 3 != 0) {
+                    j++;
+                }
+
+            }
+
+            shellmemory[j].var = strdup(filename);
             shellmemory[j].value = strndup(line, strlen(line));
-			free(line);
+            free(line);
         }
     }
-
+	printf("here");
 	//no space left to load the entire file into shell memory
-	if(!feof(fp)){
+	if (!feof(fp)) {
 		error_code = 21;
-		//clean up the file in memory
-		for(int j = 1; i <= SHELL_MEM_LENGTH; i ++){
+		// clean up the file in memory
+		for (int j = 0; j <= THRESHOLD; j++) {
 			shellmemory[j].var = "none";
 			shellmemory[j].value = "none";
-    	}
+		}
 		return error_code;
 	}
+	printf("here3");
 	printShellMemory();
     return error_code;
 }

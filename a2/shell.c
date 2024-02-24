@@ -17,6 +17,7 @@ int main(int argc, char *argv[]) {
     system("rm -rf ./backing_store");
     mkdir("./backing_store/", 0700);
     printf("%s\n", "Shell v2.0\n");
+    printf("Frame Store Size = %d; Variable Store Size = %d\n", FRAME_STORE_SIZE, VAR_STORE_SIZE);
 
     char prompt = '$';  				// Shell prompt
 	char userInput[MAX_USER_INPUT];		// user's input stored here
