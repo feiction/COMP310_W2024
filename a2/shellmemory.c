@@ -2,6 +2,8 @@
 #include<string.h>
 #include<stdio.h>
 #include<stdbool.h>
+#include <dirent.h>
+#include "pcb.h"
 
 #define SHELL_MEM_LENGTH 1000
 
@@ -12,6 +14,19 @@ struct memory_struct{
 };
 
 struct memory_struct shellmemory[SHELL_MEM_LENGTH];
+
+#if defined(FRAME_STORE_SIZE)
+#else
+const int FRAME_STORE_SIZE = 18;
+#endif
+#if defined(VAR_STORE_SIZE)
+#else
+const int VAR_STORE_SIZE = 10;
+#endif
+
+const int FRAME_SIZE = 3;
+const int THRESHOLD = FRAME_STORE_SIZE * FRAME_STORE_SIZE;
+
 
 // Helper functions
 int match(char *model, char *var) {
@@ -44,6 +59,13 @@ void mem_init(){
 		shellmemory[i].var = "none";
 		shellmemory[i].value = "none";
 	}
+}
+
+void mem_init_variable(){
+	for (int i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
+        shellmemory[i].var = "none";
+        shellmemory[i].value = "none";
+    }
 }
 
 // Set key value pair
@@ -120,7 +142,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
     int error_code = 0;
 	bool hasSpaceLeft = false;
 	bool flag = true;
-	i=101;
+	i=0;
 	size_t candidate;
 	while(flag){
 		flag = false;
@@ -146,43 +168,42 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 		return error_code;
 	}
     
-    for (size_t j = i; j < SHELL_MEM_LENGTH; j++){
-        if(feof(fp))
-        {
+    
+    for (size_t j = i; j < THRESHOLD; j++) {
+        if(feof(fp)) {
             *pEnd = (int)j-1;
             break;
-        }else{
-			line = calloc(1, SHELL_MEM_LENGTH);
-			if (fgets(line, SHELL_MEM_LENGTH, fp) == NULL)
-			{
-				continue;
-			}
-			shellmemory[j].var = strdup(filename);
+        } else {
+            line = calloc(1, THRESHOLD);
+            if (fgets(line, THRESHOLD, fp) == NULL) {
+                continue;
+            }
+			
+            shellmemory[j].var = strdup(filename);
             shellmemory[j].value = strndup(line, strlen(line));
-			free(line);
+            free(line);
         }
     }
 
 	//no space left to load the entire file into shell memory
-	if(!feof(fp)){
+	if (!feof(fp)) {
 		error_code = 21;
-		//clean up the file in memory
-		for(int j = 1; i <= SHELL_MEM_LENGTH; i ++){
+		// clean up the file in memory
+		for (int j = 0; j <= THRESHOLD; j++) {
 			shellmemory[j].var = "none";
 			shellmemory[j].value = "none";
-    	}
+		}
 		return error_code;
 	}
-	//printShellMemory();
+
     return error_code;
 }
-
-
 
 char * mem_get_value_at_line(int index){
 	if(index<0 || index > SHELL_MEM_LENGTH) return NULL; 
 	return shellmemory[index].value;
 }
+
 
 void mem_free_lines_between(int start, int end){
 	for (int i=start; i<=end && i<SHELL_MEM_LENGTH; i++){

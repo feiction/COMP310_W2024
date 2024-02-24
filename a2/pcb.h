@@ -1,6 +1,8 @@
 #ifndef PCB_H
 #define PCB_H
 #include <stdbool.h>
+
+#define MAX_PAGES (1000/3)
 /*
  * Struct:  PCB 
  * --------------------
@@ -18,8 +20,10 @@ typedef struct
     int start;
     int end;
     int job_length_score;
+    int pagetable[MAX_PAGES];
 }PCB;
 
 int generatePID();
 PCB * makePCB(int start, int end);
+int getPageIdx(PCB* pcb);
 #endif

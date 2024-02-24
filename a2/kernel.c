@@ -10,7 +10,7 @@
 #include "interpreter.h"
 #include "ready_queue.h"
 #include "interpreter.h"
-
+#define BACKING_STORE_DIR "backing_store/"
 bool active = false;
 bool debug = false;
 bool in_background = false;
@@ -24,7 +24,16 @@ int process_initialize(char *filename){
     if(fp == NULL){
 		return FILE_DOES_NOT_EXIST;
     }
-    int error_code = load_file(fp, start, end, filename);
+    int copy_to_backing = copyScript(filename);
+    if(copy_to_backing != 0){
+        return FILE_ERROR;
+    }
+    char backingstore_filename[strlen(filename) + strlen(BACKING_STORE_DIR) + 1];
+    strcpy(backingstore_filename, BACKING_STORE_DIR);
+    strcat(backingstore_filename, filename);
+    int error_code = load_file(fp, start, end, backingstore_filename);
+
+
     if(error_code != 0){
         fclose(fp);
         return FILE_ERROR;

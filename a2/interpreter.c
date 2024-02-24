@@ -41,9 +41,11 @@ int run(char* script);
 int echo(char* var);
 int my_ls();
 int my_mkdir(char* dirname);
+int my_rmdir(char* dirname);
 int my_touch(char* filename);
 int my_cd(char* dirname);
 int exec(char *fname1, char *fname2, char *fname3); //, char* policy, bool background, bool mt);
+int resetmem();
 
 // Interpret commands and their arguments
 int interpreter(char* command_args[], int args_size){
@@ -135,7 +137,10 @@ int interpreter(char* command_args[], int args_size){
 		else if(args_size == 4)
 			return exec(command_args[1],command_args[2],command_args[3]);
 	}
-	
+	else if (strcmp(command_args[0], "resetmem")==0) {
+		if (args_size != 1) return handle_error(TOO_MANY_TOKENS);
+		return resetmem();
+	}
 	return handle_error(BAD_COMMAND);
 }
 
@@ -204,6 +209,29 @@ int my_mkdir(char *dirname){
 	return errCode;
 }
 
+// remove dir inspired by make dir
+int my_rmdir(char *dirname) {
+    char *dir = dirname;
+
+    if (dirname[0] == '$') {
+        char *value = mem_get_value(++dirname);
+        if (value == NULL || strchr(value, ' ') != NULL) {
+            return handle_error(ERROR_RMDIR);
+        }
+        dir = value;
+    }
+
+    int namelen = strlen(dir);
+    char *command = (char *)calloc(1, 7 + namelen);
+    strncat(command, "rmdir ", 7);
+    strncat(command, dir, namelen);
+    
+    int errCode = system(command);
+    free(command);
+
+    return errCode;
+}
+
 int my_touch(char* filename){
 	int namelen = strlen(filename);
 	char* command = (char*) calloc(1, 7+namelen); 
@@ -262,4 +290,9 @@ int exec(char *fname1, char *fname2, char *fname3) {
 	if(error_code != 0){
 		return handle_error(error_code);
 	}
+}
+
+int resetmem() {
+	mem_init_variable();
+    return 0;
 }
