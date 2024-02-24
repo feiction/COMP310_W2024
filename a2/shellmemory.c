@@ -15,19 +15,10 @@ struct memory_struct{
 
 struct memory_struct shellmemory[SHELL_MEM_LENGTH];
 
-struct frame_struct {
-    char *fileID;
-    char *line;
-	int free;
-};
+const int FRAME_STORE_SIZE = 18;
+const int FRAME_SIZE = 3;
+const int THRESHOLD = FRAME_STORE_SIZE * FRAME_STORE_SIZE;
 
-struct variable_struct {
-    char *var;
-    char *value;
-};
-
-struct frame_struct frame_store[SHELL_MEM_LENGTH / 3]; 
-struct variable_struct variable_store[SHELL_MEM_LENGTH - (SHELL_MEM_LENGTH / 3)];
 
 // Helper functions
 int match(char *model, char *var) {
@@ -63,7 +54,7 @@ void mem_init(){
 }
 
 void mem_init_variable(){
-	for (int i = 0; i < (SHELL_MEM_LENGTH - (SHELL_MEM_LENGTH / 3)); i++) {
+	for (int i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
         shellmemory[i].var = "none";
         shellmemory[i].value = "none";
     }
@@ -143,7 +134,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
     int error_code = 0;
 	bool hasSpaceLeft = false;
 	bool flag = true;
-	i=101;
+	i=0;
 	size_t candidate;
 	while(flag){
 		flag = false;
@@ -180,13 +171,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 			{
 				continue;
 			}
-			for (int k = 0; k < SHELL_MEM_LENGTH / 3; k++) {
-				if (frame_store[k].fileID == NULL) {
-					frame_store[k].fileID = strdup(filename);
-					frame_store[k].line = strdup(line);
-					break;
-				}
-   	 		}	
+
 			shellmemory[j].var = strdup(filename);
             shellmemory[j].value = strndup(line, strlen(line));
 			free(line);
@@ -203,20 +188,15 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
     	}
 		return error_code;
 	}
-	//printShellMemory();
+	printShellMemory();
     return error_code;
 }
-
 
 char * mem_get_value_at_line(int index){
 	if(index<0 || index > SHELL_MEM_LENGTH) return NULL; 
 	return shellmemory[index].value;
 }
 
-char *frame_get_line(int index) {
-    if (index < 0 || index >= SHELL_MEM_LENGTH / 3) return NULL; 
-    return frame_store[index].line;
-}
 
 void mem_free_lines_between(int start, int end){
 	for (int i=start; i<=end && i<SHELL_MEM_LENGTH; i++){

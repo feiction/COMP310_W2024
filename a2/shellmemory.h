@@ -1,16 +1,6 @@
 #ifndef SHELLMEMORY_H
 #define SHELLMEMORY_H
 
-struct frame_struct {
-    char *fileID;
-    char *line;
-};
-
-struct variable_struct {
-    char *var;
-    char *value;
-};
-
 void mem_init();
 void mem_init_variable();
 char *mem_get_value(char *var);
