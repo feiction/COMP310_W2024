@@ -29,9 +29,6 @@ int main(int argc, char *argv[]) {
 	//init shell memory
 	mem_init();
 
-    char *directoryName = "backing_store";
-    int result = my_mkdir(directoryName);
-
 	while(1) {						
         if (isatty(fileno(stdin))) printf("%c ",prompt);
 
@@ -88,7 +85,7 @@ int parseInput(char *ui) {
 int copyScript(char *filename) {
     FILE *scriptFile, *backingStoreFile;
     char ch;
-    printf("The string is: %s\n", filename);
+    
     scriptFile = fopen(filename, "r");
     if (scriptFile == NULL) {
         perror("Error opening script file");
@@ -100,7 +97,6 @@ int copyScript(char *filename) {
 
     char newFilename[256];
     snprintf(newFilename, sizeof(newFilename), "%s%s", directoryName, scriptBaseName);
-    printf("The string is: %s\n", newFilename);
 
 
     backingStoreFile = fopen(newFilename, "w");
