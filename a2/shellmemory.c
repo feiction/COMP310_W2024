@@ -142,6 +142,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
     int error_code = 0;
 	bool hasSpaceLeft = false;
 	bool flag = true;
+	bool isFirstLine = true;
 	i=0;
 	size_t candidate;
 	while(flag){
@@ -178,6 +179,15 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
             if (fgets(line, THRESHOLD, fp) == NULL) {
                 continue;
             }
+			// HERE
+			// without these theres no invalid pointer error
+			if (isFirstLine) {
+				isFirstLine = false;
+				while (j%3 != 0) {
+					j++;
+				}
+				
+			}
 			
             shellmemory[j].var = strdup(filename);
             shellmemory[j].value = strndup(line, strlen(line));
@@ -195,7 +205,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 		}
 		return error_code;
 	}
-
+	printShellMemory();
     return error_code;
 }
 
