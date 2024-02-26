@@ -25,7 +25,7 @@ const int VAR_STORE_SIZE = 10;
 #endif
 
 const int FRAME_SIZE = 3;
-const int THRESHOLD = FRAME_STORE_SIZE * FRAME_STORE_SIZE;
+const int THRESHOLD = FRAME_STORE_SIZE * FRAME_SIZE;
 
 
 // Helper functions
@@ -71,7 +71,7 @@ void mem_init_variable(){
 // Set key value pair
 void mem_set_value(char *var_in, char *value_in) {
 	int i;
-	for (i=0; i<1000; i++){
+	for (i=THRESHOLD; i<SHELL_MEM_LENGTH; i++){
 		if (strcmp(shellmemory[i].var, var_in) == 0){
 			shellmemory[i].value = strdup(value_in);
 			return;
@@ -79,7 +79,7 @@ void mem_set_value(char *var_in, char *value_in) {
 	}
 
 	//Value does not exist, need to find a free spot.
-	for (i=0; i<1000; i++){
+	for (i=THRESHOLD; i<SHELL_MEM_LENGTH; i++){
 		if (strcmp(shellmemory[i].var, "none") == 0){
 			shellmemory[i].var = strdup(var_in);
 			shellmemory[i].value = strdup(value_in);
@@ -94,7 +94,7 @@ void mem_set_value(char *var_in, char *value_in) {
 //get value based on input key
 char *mem_get_value(char *var_in) {
 	int i;
-	for (i=0; i<1000; i++){
+	for (i=THRESHOLD; i<SHELL_MEM_LENGTH; i++){
 		if (strcmp(shellmemory[i].var, var_in) == 0){
 			return strdup(shellmemory[i].value);
 		} 
@@ -116,7 +116,25 @@ void printShellMemory(){
     }
 	printf("\n\t%d lines in total, %d lines in use, %d lines free\n\n", SHELL_MEM_LENGTH, SHELL_MEM_LENGTH-count_empty, count_empty);
 }
+int find_available_slot() {
+    bool slot_found = false;
+    int start_index = 0;
+    while (!slot_found && start_index < SHELL_MEM_LENGTH) {
+        if (strcmp(shellmemory[start_index].var, "none") == 0 &&
+            strcmp(shellmemory[start_index + 1].var, "none") == 0 &&
+            strcmp(shellmemory[start_index + 2].var, "none") == 0) {
+            slot_found = true;
+        } else {
+            start_index+=FRAME_SIZE;
+        }
+    }
 
+    if (slot_found) {
+        return start_index;
+    } else {
+        return -1;
+    }
+}
 
 /*
  * Function:  addFileToMem 
@@ -142,7 +160,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
     int error_code = 0;
 	bool hasSpaceLeft = false;
 	bool flag = true;
-	bool isFirstLine = true;
+
 	i=0;
 	size_t candidate;
 	while(flag){
@@ -163,35 +181,43 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 		}
 	}
 	i = candidate;
-	//shell memory is full
+
 	if(hasSpaceLeft == 0){
 		error_code = 21;
 		return error_code;
 	}
+    size_t frame_index = find_available_slot(); 
+	if (frame_index == -1) {
+        error_code = 21;
+        return error_code;
+    }
+    size_t page_index = 0;
+    *pStart = frame_index;
     
-    
-    for (size_t j = i; j < THRESHOLD; j++) {
-        if(feof(fp)) {
-            *pEnd = (int)j-1;
-            break;
-        } else {
+    while (!feof(fp)) {
+        for (int i = 0; i < FRAME_SIZE; i++) {
+            if (feof(fp)) {
+                *pEnd = frame_index - 1;
+                break;
+            }
+
             line = calloc(1, THRESHOLD);
             if (fgets(line, THRESHOLD, fp) == NULL) {
                 continue;
             }
-			// HERE
-			// without these theres no invalid pointer error
-			if (isFirstLine) {
-				isFirstLine = false;
-				while (j%3 != 0) {
-					j++;
-				}
-				
-			}
-			
-            shellmemory[j].var = strdup(filename);
-            shellmemory[j].value = strndup(line, strlen(line));
+
+            shellmemory[frame_index].var = strdup(filename);
+            shellmemory[frame_index].value = strndup(line, strlen(line));
             free(line);
+
+            frame_index++;
+        }
+
+        page_index++;
+
+        if (frame_index >= SHELL_MEM_LENGTH) {
+            error_code = 21;
+            break;
         }
     }
 
