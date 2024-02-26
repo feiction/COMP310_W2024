@@ -119,7 +119,7 @@ void printShellMemory(){
 int find_available_slot() {
     bool slot_found = false;
     int start_index = 0;
-    while (!slot_found && start_index < SHELL_MEM_LENGTH) {
+    while (!slot_found && start_index < THRESHOLD) {
         if (strcmp(shellmemory[start_index].var, "none") == 0 &&
             strcmp(shellmemory[start_index + 1].var, "none") == 0 &&
             strcmp(shellmemory[start_index + 2].var, "none") == 0) {
