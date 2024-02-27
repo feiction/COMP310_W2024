@@ -16,13 +16,12 @@ PCB* makePCB(){
     newPCB->pid = generatePID();
     newPCB->start  = 0;
     newPCB->end = 0;
-    newPCB->PC = newPCB->start;
+    newPCB->programCount = newPCB->start;
     newPCB->job_length_score = 1+(newPCB->end)-(newPCB->start);
     newPCB->priority = false;
-    newPCB->pageCounter = 0;
     
     for (int i = 0; i < MAX_PAGES; i++) {
-        newPCB->pagetable[i] = -1;
+        newPCB->pageTable[i] = -1;
         newPCB->pageLoaded[i] = false;
     }
 
@@ -31,7 +30,7 @@ PCB* makePCB(){
 
 int getPageIdx(PCB* pcb) {
     for (int i = 9; i >= 0; i--) {
-        if (pcb->pagetable[i] != -1) {
+        if (pcb->pageTable[i] != -1) {
             return i + 1;
         }
     }

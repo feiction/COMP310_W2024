@@ -40,9 +40,9 @@ int process_initialize(char *filename){
     fp2 = fopen(backingstore_filename, "rt");
     PCB* newPCB = makePCB();
     int error_code = load_file(fp2, newPCB, backingstore_filename);
-    for (int i = 0; i < MAX_PAGES; i++) {
-        printf("Page %d: %d\n", i, newPCB->pagetable[i]);
-    }
+    /* for (int i = 0; i < MAX_PAGES; i++) {
+        printf("Page %d: %d\n", i, newPCB->pageTable[i]);
+    } */
 
     if(error_code != 0){
         fclose(fp2);
@@ -83,12 +83,12 @@ bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
     for(int i=0; i<quanta; i++){
-        line = mem_get_value_at_line(pcb->PC++);
+        line = mem_get_value_at_line(pcb->programCount++);
         in_background = true;
         if(pcb->priority) {
             pcb->priority = false;
         }
-        if(pcb->PC>pcb->end){
+        if(pcb->programCount>pcb->end){
             parseInput(line);
             terminate_process(node);
             in_background = false;

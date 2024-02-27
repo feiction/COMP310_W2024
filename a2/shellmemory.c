@@ -103,7 +103,6 @@ char *mem_get_value(char *var_in) {
 
 }
 
-
 void printShellMemory(){
 	int count_empty = 0;
 	for (int i = 0; i < SHELL_MEM_LENGTH; i++){
@@ -116,6 +115,7 @@ void printShellMemory(){
     }
 	printf("\n\t%d lines in total, %d lines in use, %d lines free\n\n", SHELL_MEM_LENGTH, SHELL_MEM_LENGTH-count_empty, count_empty);
 }
+
 int find_available_slot() {
     bool slot_found = false;
     int start_index = 0;
@@ -165,7 +165,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
     }
     size_t page_index = 0;
     pcb->start = frame_index;
-    pcb->PC = pcb->start;
+    pcb->programCount = pcb->start;
     int lines_loaded = 0;
     bool load_next_page = true;
 
@@ -190,11 +190,11 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
 
             // Check if page completed
             if (lines_loaded % 3 == 0 || feof(fp)) {
-                pcb->pagetable[page_index] = (frame_start) / 3;
+                pcb->pageTable[page_index] = (frame_start) / 3;
                 pcb->pageLoaded[page_index] = true; // mark page as loaded
                 page_index++;
 
-                // If two pages loaded or the file is small, stop loading more pages.
+                // If two pages loaded or the file too small, stop loading more pages.
                 if (page_index == 2 || feof(fp)) {
                     load_next_page = false;
                 }
@@ -209,7 +209,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
 
     pcb->end = frame_index - 1;
 
-    printShellMemory();
+    //printShellMemory();	// debug line
     return error_code;
 }
 
