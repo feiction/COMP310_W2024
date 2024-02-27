@@ -2,4 +2,5 @@
 #define SHELL_H
 int parseInput(char *ui);
 int copyScript(char *filename);
+int count_files_backing();
 #endif

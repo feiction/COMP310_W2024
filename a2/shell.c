@@ -9,6 +9,7 @@
 #include "kernel.h"
 #include "shell.h"
 #include <libgen.h>
+#include <dirent.h>
 
 int MAX_USER_INPUT = 1000;
 int parseInput(char ui[]);
@@ -83,6 +84,28 @@ int parseInput(char *ui) {
     return errorCode;
 }
 
+
+int count_files_backing() {
+    struct dirent *dp;  //pointer for directory entry
+    int count = 0;
+
+    DIR *dr = opendir("backing_store");
+
+    if (dr == NULL) {
+        printf("Error opening current directory");
+        return -1;
+    }
+
+    while ((dp = readdir(dr)) != NULL) {
+        count ++;
+    }
+
+    closedir(dr);
+
+    return count - 2;
+}
+
+
 int copyScript(char *filename) {
     FILE *scriptFile, *backingStoreFile;
     char ch;
@@ -94,10 +117,10 @@ int copyScript(char *filename) {
     }
     const char *directoryName = "backing_store/";
     const char *scriptBaseName = basename(strdup(filename));
-
+    int count = count_files_backing();
 
     char newFilename[256];
-    snprintf(newFilename, sizeof(newFilename), "%s%s", directoryName, scriptBaseName);
+    snprintf(newFilename, sizeof(newFilename), "%sprog%d", directoryName, count);
 
 
     backingStoreFile = fopen(newFilename, "w");

@@ -25,23 +25,30 @@ int process_initialize(char *filename){
     if(fp == NULL){
 		return FILE_DOES_NOT_EXIST;
     }
+    int count = count_files_backing();
     int copy_to_backing = copyScript(filename);
     if(copy_to_backing != 0){
         return FILE_ERROR;
     }
     fclose(fp);
+
     char backingstore_filename[strlen(filename) + strlen(BACKING_STORE_DIR) + 1];
     strcpy(backingstore_filename, BACKING_STORE_DIR);
-    strcat(backingstore_filename, filename);
+    char newFilename[256];
+    snprintf(newFilename, sizeof(newFilename), "prog%d", count);
+    strcat(backingstore_filename, newFilename);
     fp2 = fopen(backingstore_filename, "rt");
-    int error_code = load_file(fp2, start, end, backingstore_filename);
-
+    PCB* newPCB = makePCB();
+    int error_code = load_file(fp2, newPCB, backingstore_filename);
+    for (int i = 0; i < MAX_PAGES; i++) {
+        printf("Page %d: %d\n", i, newPCB->pagetable[i]);
+    }
 
     if(error_code != 0){
         fclose(fp2);
         return FILE_ERROR;
     }
-    PCB* newPCB = makePCB(*start,*end);
+   
     QueueNode *node = malloc(sizeof(QueueNode));
     node->pcb = newPCB;
 
@@ -51,7 +58,7 @@ int process_initialize(char *filename){
     return 0;
 }
 
-int shell_process_initialize(){
+/*int shell_process_initialize(){
     //Note that "You can assume that the # option will only be used in batch mode."
     //So we know that the input is a file, we can directly load the file into ram
     int* start = (int*)malloc(sizeof(int));
@@ -70,7 +77,7 @@ int shell_process_initialize(){
 
     freopen("/dev/tty", "r", stdin);
     return 0;
-}
+}*/
 
 bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
@@ -87,7 +94,9 @@ bool execute_process(QueueNode *node, int quanta){
             in_background = false;
             return true;
         }
-        parseInput(line);
+        if(strcmp(line, "none")!=0) {
+            parseInput(line);
+        }
         in_background = false;
     }
     return false;

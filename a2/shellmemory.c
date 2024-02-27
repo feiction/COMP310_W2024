@@ -153,7 +153,7 @@ int find_available_slot() {
  * 
  * returns: error code, 21: no space left
  */
-int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
+int load_file(FILE* fp, PCB* pcb, char* filename)
 {
 	char *line;
     size_t i;
@@ -162,42 +162,22 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 	bool flag = true;
 
 	i=0;
-	size_t candidate;
-	while(flag){
-		flag = false;
-		for (i; i < SHELL_MEM_LENGTH; i++){
-			if(strcmp(shellmemory[i].var,"none") == 0){
-				*pStart = (int)i;
-				hasSpaceLeft = true;
-				break;
-			}
-		}
-		candidate = i;
-		for(i; i < SHELL_MEM_LENGTH; i++){
-			if(strcmp(shellmemory[i].var,"none") != 0){
-				flag = true;
-				break;
-			}
-		}
-	}
-	i = candidate;
 
-	if(hasSpaceLeft == 0){
-		error_code = 21;
-		return error_code;
-	}
     size_t frame_index = find_available_slot(); 
+	//printf("%s: %d\n", filename, frame_index);
 	if (frame_index == -1) {
         error_code = 21;
         return error_code;
     }
     size_t page_index = 0;
-    *pStart = frame_index;
-    
+    pcb->start = frame_index;
+	pcb->PC = pcb->start;
+    int frame_start = pcb->start;
     while (!feof(fp)) {
+		frame_start = frame_index;
         for (int i = 0; i < FRAME_SIZE; i++) {
             if (feof(fp)) {
-                *pEnd = frame_index - 1;
+                pcb->end = frame_index - 1;;
                 break;
             }
 
@@ -209,19 +189,19 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
             shellmemory[frame_index].var = strdup(filename);
             shellmemory[frame_index].value = strndup(line, strlen(line));
             free(line);
-
             frame_index++;
         }
-		*pEnd = frame_index - 1;
-
+		pcb->end = frame_index - 1;
+		pcb->pagetable[page_index] = (frame_start)/3;
         page_index++;
+
 
         if (frame_index >= SHELL_MEM_LENGTH) {
             error_code = 21;
             break;
         }
     }
-
+	
 	//no space left to load the entire file into shell memory
 	if (!feof(fp)) {
 		error_code = 21;
