@@ -20,10 +20,10 @@ PCB* makePCB(){
     newPCB->job_length_score = 1+(newPCB->end)-(newPCB->start);
     newPCB->priority = false;
     newPCB->pageCounter = 0;
-
     
     for (int i = 0; i < MAX_PAGES; i++) {
         newPCB->pagetable[i] = -1;
+        pcb->pageLoaded[i] = false;
     }
 
     return newPCB;

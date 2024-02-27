@@ -153,31 +153,27 @@ int find_available_slot() {
  * 
  * returns: error code, 21: no space left
  */
-int load_file(FILE* fp, PCB* pcb, char* filename)
-{
-	char *line;
-    size_t i;
+int load_file(FILE* fp, PCB* pcb, char* filename) {
+    char *line;
+    size_t i = 0;
     int error_code = 0;
-	bool hasSpaceLeft = false;
-	bool flag = true;
-
-	i=0;
-
-    size_t frame_index = find_available_slot(); 
-	//printf("%s: %d\n", filename, frame_index);
-	if (frame_index == -1) {
+    bool flag = true;
+    size_t frame_index = find_available_slot();
+    if (frame_index == -1) {
         error_code = 21;
         return error_code;
     }
     size_t page_index = 0;
     pcb->start = frame_index;
-	pcb->PC = pcb->start;
-    int frame_start = pcb->start;
-    while (!feof(fp)) {
-		frame_start = frame_index;
-        for (int i = 0; i < FRAME_SIZE; i++) {
+    pcb->PC = pcb->start;
+    int lines_loaded = 0;
+    bool load_next_page = true;
+
+    while (!feof(fp) && load_next_page) {
+        size_t frame_start = frame_index;
+        for (int i = 0; i < FRAME_SIZE && lines_loaded < 6; i++) {
             if (feof(fp)) {
-                pcb->end = frame_index - 1;;
+                pcb->end = frame_index - 1;
                 break;
             }
 
@@ -190,29 +186,35 @@ int load_file(FILE* fp, PCB* pcb, char* filename)
             shellmemory[frame_index].value = strndup(line, strlen(line));
             free(line);
             frame_index++;
-        }
-		pcb->end = frame_index - 1;
-		pcb->pagetable[page_index] = (frame_start)/3;
-        page_index++;
+            lines_loaded++;
 
+            // Check if we have completed a page.
+            if (lines_loaded % 3 == 0 || feof(fp)) {
+                pcb->pagetable[page_index] = (frame_start) / 3;
+                pcb->pageLoaded[page_index] = true; // Mark this page as loaded.
+                page_index++;
+
+                // If we've loaded two pages or the file is small, stop loading more pages.
+                if (page_index == 2 || feof(fp)) {
+                    load_next_page = false;
+                }
+            }
+        }
 
         if (frame_index >= SHELL_MEM_LENGTH) {
             error_code = 21;
             break;
         }
     }
-	
-	//no space left to load the entire file into shell memory
-	if (!feof(fp)) {
-		error_code = 21;
-		// clean up the file in memory
-		for (int j = 0; j <= THRESHOLD; j++) {
-			shellmemory[j].var = "none";
-			shellmemory[j].value = "none";
-		}
-		return error_code;
-	}
-	printShellMemory();
+
+    pcb->end = frame_index - 1;
+
+    // Here you should mark any remaining pages in the PCB as not loaded.
+    for (int j = page_index; j < MAX_PAGES; j++) {
+        pcb->pageLoaded[j] = false;
+    }
+
+    printShellMemory();
     return error_code;
 }
 

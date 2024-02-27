@@ -22,6 +22,7 @@ typedef struct
     int job_length_score;
     int pageCounter;
     int pagetable[MAX_PAGES];
+    bool pageLoaded[MAX_PAGES];
 }PCB;
 
 int generatePID();
