@@ -128,12 +128,9 @@ int find_available_slot() {
             start_index+=FRAME_SIZE;
         }
     }
-
-    if (slot_found) {
+    if (slot_found)
         return start_index;
-    } else {
-        return -1;
-    }
+    return -1;
 }
 
 /*
@@ -159,13 +156,16 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
     int error_code = 0;
     bool flag = true;
     size_t frame_index = find_available_slot();
+
+	// No slot found
     if (frame_index == -1) {
         error_code = 21;
         return error_code;
     }
-    size_t page_index = 0;
+
     pcb->start = frame_index;
     pcb->programCount = pcb->start;
+    size_t page_index = 0;
     int lines_loaded = 0;
     bool load_next_page = true;
 

@@ -58,27 +58,6 @@ int process_initialize(char *filename){
     return 0;
 }
 
-/*int shell_process_initialize(){
-    //Note that "You can assume that the # option will only be used in batch mode."
-    //So we know that the input is a file, we can directly load the file into ram
-    int* start = (int*)malloc(sizeof(int));
-    int* end = (int*)malloc(sizeof(int));
-    int error_code = 0;
-    error_code = load_file(stdin, start, end, "_SHELL");
-    if(error_code != 0){
-        return error_code;
-    }
-    PCB* newPCB = makePCB(*start,*end);
-    newPCB->priority = true;
-    QueueNode *node = malloc(sizeof(QueueNode));
-    node->pcb = newPCB;
-
-    ready_queue_add_to_head(node);
-
-    freopen("/dev/tty", "r", stdin);
-    return 0;
-}*/
-
 bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
@@ -88,7 +67,7 @@ bool execute_process(QueueNode *node, int quanta){
         if(pcb->priority) {
             pcb->priority = false;
         }
-        if(pcb->programCount>pcb->end){
+        if(pcb->programCount > pcb->end){
             parseInput(line);
             terminate_process(node);
             in_background = false;
