@@ -119,7 +119,7 @@ void printShellMemory(){
 int find_available_slot() {
     bool slot_found = false;
     int start_index = 0;
-    while (!slot_found && start_index < THRESHOLD) {
+    while (!slot_found && start_index < THRESHOLD-2) {
         if (strcmp(shellmemory[start_index].var, "none") == 0 &&
             strcmp(shellmemory[start_index + 1].var, "none") == 0 &&
             strcmp(shellmemory[start_index + 2].var, "none") == 0) {
@@ -212,6 +212,7 @@ int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
 
             frame_index++;
         }
+		*pEnd = frame_index - 1;
 
         page_index++;
 

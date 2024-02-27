@@ -17,6 +17,7 @@ bool in_background = false;
 
 int process_initialize(char *filename){
     FILE* fp;
+    FILE* fp2;
     int* start = (int*)malloc(sizeof(int));
     int* end = (int*)malloc(sizeof(int));
     
@@ -28,14 +29,16 @@ int process_initialize(char *filename){
     if(copy_to_backing != 0){
         return FILE_ERROR;
     }
+    fclose(fp);
     char backingstore_filename[strlen(filename) + strlen(BACKING_STORE_DIR) + 1];
     strcpy(backingstore_filename, BACKING_STORE_DIR);
     strcat(backingstore_filename, filename);
-    int error_code = load_file(fp, start, end, backingstore_filename);
+    fp2 = fopen(backingstore_filename, "rt");
+    int error_code = load_file(fp2, start, end, backingstore_filename);
 
 
     if(error_code != 0){
-        fclose(fp);
+        fclose(fp2);
         return FILE_ERROR;
     }
     PCB* newPCB = makePCB(*start,*end);
@@ -44,7 +47,7 @@ int process_initialize(char *filename){
 
     ready_queue_add_to_tail(node);
 
-    fclose(fp);
+    fclose(fp2);
     return 0;
 }
 
