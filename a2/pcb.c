@@ -23,7 +23,7 @@ PCB* makePCB(){
     
     for (int i = 0; i < MAX_PAGES; i++) {
         newPCB->pagetable[i] = -1;
-        pcb->pageLoaded[i] = false;
+        newPCB->pageLoaded[i] = false;
     }
 
     return newPCB;
