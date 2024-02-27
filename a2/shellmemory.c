@@ -188,13 +188,13 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
             frame_index++;
             lines_loaded++;
 
-            // Check if we have completed a page.
+            // Check if page completed
             if (lines_loaded % 3 == 0 || feof(fp)) {
                 pcb->pagetable[page_index] = (frame_start) / 3;
-                pcb->pageLoaded[page_index] = true; // Mark this page as loaded.
+                pcb->pageLoaded[page_index] = true; // mark page as loaded
                 page_index++;
 
-                // If we've loaded two pages or the file is small, stop loading more pages.
+                // If two pages loaded or the file is small, stop loading more pages.
                 if (page_index == 2 || feof(fp)) {
                     load_next_page = false;
                 }
@@ -208,11 +208,6 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
     }
 
     pcb->end = frame_index - 1;
-
-    // Here you should mark any remaining pages in the PCB as not loaded.
-    for (int j = page_index; j < MAX_PAGES; j++) {
-        pcb->pageLoaded[j] = false;
-    }
 
     printShellMemory();
     return error_code;
