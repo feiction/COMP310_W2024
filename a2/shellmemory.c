@@ -27,7 +27,7 @@ const int VAR_STORE_SIZE = 10;
 #endif
 
 const int FRAME_SIZE = 3;
-const int THRESHOLD = FRAME_STORE_SIZE;
+const int THRESHOLD = FRAME_STORE_SIZE * FRAME_SIZE;
 
 
 // Helper functions
@@ -144,6 +144,7 @@ int find_available_slot() {
     }
 }
 
+<<<<<<< Updated upstream
 int find_lru_frame() {
     int min_access_sum = INT_MAX;  // initialize with max possible integer value
     int lru_frame_index = -1;      // no frame found
@@ -168,6 +169,8 @@ int find_lru_frame() {
     return lru_frame_index;
 }
 
+=======
+>>>>>>> Stashed changes
 /*
  * Function:  addFileToMem 
  * 	Added in A2
@@ -198,13 +201,14 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
     size_t page_index = 0;
     pcb->start = frame_index;
     pcb->PC = pcb->start;
-	pcb->filename = strdup(filename);
-	pcb->file = fp;
-
     int lines_loaded = 0;
     bool load_next_page = true;
 
+<<<<<<< Updated upstream
     while (!feof(fp) && load_next_page && frame_index < THRESHOLD - 2) {
+=======
+    while (!feof(fp) && load_next_page) {
+>>>>>>> Stashed changes
         size_t frame_start = frame_index;
         for (int i = 0; i < FRAME_SIZE && lines_loaded < 6; i++) {
             if (feof(fp)) {
@@ -229,19 +233,15 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
                 pcb->pagetable[page_index] = (frame_start) / 3;
                 pcb->pageLoaded[page_index] = true; // mark page as loaded
                 page_index++;
-                pcb->pageCounter++;
 
                 // If two pages loaded or the file is small, stop loading more pages.
                 if (page_index == 2 || feof(fp)) {
                     load_next_page = false;
                 }
-				if (page_index == 2 && !feof(fp)) {
-                    //pcb->pageFault = true;
-                }
             }
         }
 
-        if (frame_index >= THRESHOLD) {
+        if (frame_index >= SHELL_MEM_LENGTH) {
             error_code = 21;
             break;
         }
@@ -249,6 +249,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
 
     pcb->end = frame_index - 1;
 
+<<<<<<< Updated upstream
     //printShellMemory();
     return error_code;
 }
@@ -388,6 +389,9 @@ int remove_frame(PCB* pcb) {
         printf("Page %d: %d, %d\n", i, pcb->pagetable[i], pcb->pageFault);
     }*/
     
+=======
+    printShellMemory();
+>>>>>>> Stashed changes
     return error_code;
 }
 

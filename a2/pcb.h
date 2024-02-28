@@ -15,20 +15,14 @@
 typedef struct
 {
     bool priority;
-    bool pageFault;
-    bool terminated;
-    int currentPage;
     int pid;
     int PC;
     int start;
     int end;
     int job_length_score;
     int pageCounter;
-    int currentLine;
     int pagetable[MAX_PAGES];
-    char *filename;
     bool pageLoaded[MAX_PAGES];
-    FILE* file;
 }PCB;
 
 int generatePID();

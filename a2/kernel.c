@@ -14,7 +14,7 @@
 bool active = false;
 bool debug = false;
 bool in_background = false;
-int count;
+
 int process_initialize(char *filename){
     FILE* fp;
     FILE* fp2;
@@ -39,8 +39,10 @@ int process_initialize(char *filename){
     strcat(backingstore_filename, newFilename);
     fp2 = fopen(backingstore_filename, "rt");
     PCB* newPCB = makePCB();
-
     int error_code = load_file(fp2, newPCB, backingstore_filename);
+    for (int i = 0; i < MAX_PAGES; i++) {
+        printf("Page %d: %d\n", i, newPCB->pagetable[i]);
+    }
 
     if(error_code != 0){
         fclose(fp2);
@@ -60,6 +62,7 @@ bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
     for(int i=0; i<quanta; i++){
+<<<<<<< Updated upstream
         bool page_fault = pcb->currentPage > pcb->pageCounter;
        // printf("%s, %d, %d\n", pcb->filename, pcb->currentPage, pcb->pageCounter);
         if (page_fault) {
@@ -79,39 +82,23 @@ bool execute_process(QueueNode *node, int quanta){
             }
             return false;
         }
+=======
+>>>>>>> Stashed changes
         line = mem_get_value_at_line(pcb->PC++);
         in_background = true;
         if(pcb->priority) {
             pcb->priority = false;
         }
-        /* comment this out
         if(pcb->PC>pcb->end){
-            printf("parsed: ");
             parseInput(line);
-            //terminate_process(node);
-            in_background = false;
-            //return true;
-        }*/
-       // printf("line: %s\n", line);
-        if(strcmp(line, "none")!=0) {
-            
-            parseInput(line);
-        }
-        else {
-            //printf("hereeee\n");
-            in_background = false;
             terminate_process(node);
+            in_background = false;
             return true;
         }
-        in_background = false;
-        if (pcb->currentLine == 2) {
-            pcb->currentLine = 0;
-            pcb->currentPage++;
-        } 
-        else {
-            pcb->currentLine++;
+        if(strcmp(line, "none")!=0) {
+            parseInput(line);
         }
-    
+        in_background = false;
     }
     return false;
 }
@@ -124,11 +111,7 @@ void *scheduler_FCFS(){
             else break;   
         }
         cur = ready_queue_pop_head();
-        if (!execute_process(cur, MAX_INT)) {
-             ready_queue_add_to_tail(cur);
-        }
-
-
+        execute_process(cur, MAX_INT);
     }
     return 0;
 }
@@ -189,15 +172,13 @@ void *scheduler_AGING(){
 void *scheduler_RR(void *arg){
     int quanta = ((int *) arg)[0];
     QueueNode *cur;
-    //printf("%d\n", count_files_backing());
     while(true){
         if(is_ready_empty()){
-            //printf("here");
             if(active) continue;
             else break;
-             
         }
         cur = ready_queue_pop_head();
+<<<<<<< Updated upstream
         if(execute_process(cur, quanta)) {
             
         }
@@ -205,6 +186,9 @@ void *scheduler_RR(void *arg){
             if (cur->pcb->pageFault) {
                 //printf("hello");
             }
+=======
+        if(!execute_process(cur, quanta)) {
+>>>>>>> Stashed changes
             ready_queue_add_to_tail(cur);
         }
     }

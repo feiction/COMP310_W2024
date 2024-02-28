@@ -19,13 +19,7 @@ PCB* makePCB(){
     newPCB->PC = newPCB->start;
     newPCB->job_length_score = 1+(newPCB->end)-(newPCB->start);
     newPCB->priority = false;
-    newPCB->currentPage = 1;
-    newPCB->currentLine = 0;
     newPCB->pageCounter = 0;
-    newPCB->pageFault = false;
-    newPCB->terminated = false;
-    newPCB->filename = NULL;
-    newPCB->file = NULL;
     
     for (int i = 0; i < MAX_PAGES; i++) {
         newPCB->pagetable[i] = -1;
