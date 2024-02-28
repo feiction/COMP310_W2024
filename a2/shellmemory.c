@@ -198,10 +198,11 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
                 break;
             }
 
-            line = calloc(1, THRESHOLD);
-            if (fgets(line, THRESHOLD, fp) == NULL) {
+            line = calloc(1, sizeof(char) * 100);
+            if (fgets(line, sizeof(char) * 100, fp) == NULL) {
                 continue;
             }
+            printf("%s\n", line);
 
             shellmemory[frame_index].var = strdup(filename);
             shellmemory[frame_index].value = strndup(line, strlen(line));
@@ -220,20 +221,18 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
                 if (page_index == 2 || feof(fp)) {
                     load_next_page = false;
                 }
-				if (page_index == 2 && !feof(fp)) {
-                    //pcb->pageFault = true;
-                }
+
             }
         }
-
-        if (frame_index >= THRESHOLD) {
+       
+        if (frame_index > THRESHOLD) {
             error_code = 21;
             break;
         }
     }
 
     pcb->end = frame_index - 1;
-
+    printf("%d", error_code);
     //printShellMemory();
     return error_code;
 }
@@ -255,10 +254,10 @@ int load_frame(PCB* pcb) {
         }
     }
     size_t page_index = i;
-    //printf("%s: page counter: %d\n", pcb->filename, pcb->pageCounter);
+
 	for (int i = 0; i< pcb->pageCounter*3; i++){
-		line = calloc(1, THRESHOLD);
-		fgets(line, THRESHOLD, fp);
+		line = calloc(1, sizeof(char) * 100);
+		fgets(line, sizeof(char) * 100, fp);
         if (feof(fp)) {
             return -2;
         }
@@ -270,6 +269,7 @@ int load_frame(PCB* pcb) {
 	}
     size_t frame_index = find_available_slot();
     if (frame_index == -1) {
+        printf("error code -1\n");
         error_code = -1;
         return error_code;
     }
@@ -291,8 +291,8 @@ int load_frame(PCB* pcb) {
 				pcb->end = frame_index - 1;
 				break;
 			}
-			line = calloc(1, THRESHOLD);
-            if (fgets(line, THRESHOLD, fp) == NULL) {
+			line = calloc(1, sizeof(char) * 100);
+            if (fgets(line, sizeof(char) * 100, fp) == NULL) {
                 continue;
             }
 			shellmemory[frame_index].var = strdup(filename);
@@ -355,6 +355,7 @@ int remove_frame(PCB* pcb) {
         
         // Move to the next frame index
     }
+    printf("%s\n", "End of victim page contents.");
 	
 	//load_frame(pcb);
     
