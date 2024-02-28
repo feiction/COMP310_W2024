@@ -5,16 +5,6 @@
 #include <dirent.h>
 #include "pcb.h"
 
-#define SHELL_MEM_LENGTH 1000
-
-
-struct memory_struct{
-	char *var;
-	char *value;
-};
-
-struct memory_struct shellmemory[SHELL_MEM_LENGTH];
-
 #if defined(FRAME_STORE_SIZE)
 #else
 const int FRAME_STORE_SIZE = 18;
@@ -23,6 +13,15 @@ const int FRAME_STORE_SIZE = 18;
 #else
 const int VAR_STORE_SIZE = 10;
 #endif
+
+#define SHELL_MEM_LENGTH (FRAME_STORE_SIZE+VAR_STORE_SIZE)
+
+struct memory_struct{
+	char *var;
+	char *value;
+};
+
+struct memory_struct shellmemory[SHELL_MEM_LENGTH];
 
 const int FRAME_SIZE = 3;
 const int THRESHOLD = FRAME_STORE_SIZE;
@@ -55,7 +54,7 @@ char *extract(char *model) {
 
 void mem_init(){
 	int i;
-	for (i=0; i<1000; i++){		
+	for (i=0; i<SHELL_MEM_LENGTH; i++){		
 		shellmemory[i].var = "none";
 		shellmemory[i].value = "none";
 	}
