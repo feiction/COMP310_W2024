@@ -61,7 +61,20 @@ int process_initialize(char *filename){
 bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
-    for(int i=0; i<quanta; i++){
+    
+    for (int i=0; i < quanta; i++){
+
+        if (pcb->pageFault) {
+            bool pageFetched = fetch_page(pcb);
+
+            if (pageFetched) {
+                return false;
+            } else {
+                terminate_process(node);
+                return true;
+            }
+        }
+
         line = mem_get_value_at_line(pcb->programCount++);
         in_background = true;
         if(pcb->priority) {

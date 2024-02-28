@@ -116,10 +116,12 @@ void printShellMemory(){
 	printf("\n\t%d lines in total, %d lines in use, %d lines free\n\n", SHELL_MEM_LENGTH, SHELL_MEM_LENGTH-count_empty, count_empty);
 }
 
+//Helper functions for load_file
+
 int find_available_slot() {
     bool slot_found = false;
     int start_index = 0;
-    while (!slot_found && start_index < THRESHOLD-2) {
+    while (!slot_found && start_index < THRESHOLD - 2) {
         if (strcmp(shellmemory[start_index].var, "none") == 0 &&
             strcmp(shellmemory[start_index + 1].var, "none") == 0 &&
             strcmp(shellmemory[start_index + 2].var, "none") == 0) {
@@ -133,32 +135,61 @@ int find_available_slot() {
     return -1;
 }
 
-/*
- * Function:  addFileToMem 
- * 	Added in A2
- * --------------------
- * Load the source code of the file fp into the shell memory:
- * 		Loading format - var stores fileID, value stores a line
- *		Note that the first 100 lines are for set command, the rests are for run and exec command
- *
- *  pStart: This function will store the first line of the loaded file 
- * 			in shell memory in here
- *	pEnd: This function will store the last line of the loaded file 
- 			in shell memory in here
- *  fileID: Input that need to provide when calling the function, 
- 			stores the ID of the file
- * 
- * returns: error code, 21: no space left
- */
+int find_lru_frame(PCB* pcb) {
+    int lru_frame = -1;
+    int lru_value = 0;
+    
+    // Find least recently used frame by going through lastAccessed array
+    for (int i = pcb->start; i <= pcb->end; i++) {
+        if (shellmemory[i].var != "none" && pcb->lastAccessed[i] < lru_value) {
+            lru_value = pcb->lastAccessed[i];
+            lru_frame = i;
+        }
+    }
+    return lru_frame;
+}
+
+bool fetch_page(PCB *pcb) {
+    int available_slot = find_available_slot();
+    
+    // If no available slot, find LRU page and evict it
+    if (available_slot == -1) {
+        int lru_frame_index = find_lru_frame(pcb);
+        
+        // LRU page found
+        if (lru_frame_index != -1) {
+            int page_number = lru_frame_index / FRAME_SIZE;
+            
+            // Print victim page contents
+            printf("Page fault! Victim page contents:\n");
+            for (int i = 0; i < FRAME_SIZE; i++) {
+                int frame_index = (page_number * FRAME_SIZE) + i;
+                if (shellmemory[frame_index].var != NULL) {
+                    printf("%s\n", shellmemory[frame_index].value);
+                }
+            }
+            printf("End of victim page contents.\n");
+
+            bool replaced = replace_page_contents(pcb, lru_frame_index);
+            return replaced;
+        } else {
+            // Failed to find a page to evict
+            return false;
+        }
+    } else {
+        // Load page into the available slot directly without eviction
+        bool loaded = load_page_to_memory(pcb, available_slot);
+        return loaded;
+    }
+}
+
+
 int load_file(FILE* fp, PCB* pcb, char* filename) {
     char *line;
-    size_t i = 0;
     int error_code = 0;
-    bool flag = true;
     size_t frame_index = find_available_slot();
 
-	// No slot found
-    if (frame_index == -1) {
+     if (frame_index == -1) {
         error_code = 21;
         return error_code;
     }
@@ -169,7 +200,16 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
     int lines_loaded = 0;
     bool load_next_page = true;
 
+	// Load pages from the file into memory
     while (!feof(fp) && load_next_page) {
+
+        // Check if 2 pages are already loaded in memory
+        if (page_index == 2) {
+            pcb->pageFault = true;
+            load_next_page = false;
+        }
+
+        // Proceed the loading
         size_t frame_start = frame_index;
         for (int i = 0; i < FRAME_SIZE && lines_loaded < 6; i++) {
             if (feof(fp)) {
@@ -178,9 +218,8 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
             }
 
             line = calloc(1, THRESHOLD);
-            if (fgets(line, THRESHOLD, fp) == NULL) {
+            if (fgets(line, THRESHOLD, fp) == NULL)
                 continue;
-            }
 
             shellmemory[frame_index].var = strdup(filename);
             shellmemory[frame_index].value = strndup(line, strlen(line));
@@ -190,14 +229,10 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
 
             // Check if page completed
             if (lines_loaded % 3 == 0 || feof(fp)) {
-                pcb->pageTable[page_index] = (frame_start) / 3;
-                pcb->pageLoaded[page_index] = true; // mark page as loaded
+                pcb->pageTable[page_index] = (frame_start) / FRAME_SIZE;
+                pcb->pageLoaded[page_index] = true; 		// mark page as loaded
+				pcb->lastAccessed[page_index]++;            // update last accessed value
                 page_index++;
-
-                // If two pages loaded or the file too small, stop loading more pages.
-                if (page_index == 2 || feof(fp)) {
-                    load_next_page = false;
-                }
             }
         }
 
@@ -209,7 +244,14 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
 
     pcb->end = frame_index - 1;
 
-    //printShellMemory();	// debug line
+/* 	// Print PCB information for debugging
+    printf("Program loaded into memory:\n");
+    printf("Start: %d, End: %d\n", pcb->start, pcb->end);
+    for (int i = 0; i < 2; i++) {
+        printf("Page %d: Frame %d, Loaded: %s\n", i, pcb->pageTable[i], pcb->pageLoaded[i] ? "Yes" : "No");
+    } */
+
+    //printShellMemory();    // debug line
     return error_code;
 }
 
@@ -217,7 +259,6 @@ char * mem_get_value_at_line(int index){
 	if(index<0 || index > SHELL_MEM_LENGTH) return NULL; 
 	return shellmemory[index].value;
 }
-
 
 void mem_free_lines_between(int start, int end){
 	for (int i=start; i<=end && i<SHELL_MEM_LENGTH; i++){
