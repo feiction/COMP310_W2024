@@ -18,14 +18,14 @@ PCB* makePCB(){
     pcb->end = 0;
     pcb->programCount = pcb->start;
     pcb->job_length_score = 1+(pcb->end)-(pcb->start);
-    pcb->pageFault = false;
+    pcb->completed = false;
     pcb->priority = false;
-    
     for (int i = 0; i < MAX_PAGES; i++) {
         pcb->pageTable[i] = -1;
         pcb->pageLoaded[i] = false;
-        pcb->lastAccessed[i] = 0;
     }
+    pcb->fp = NULL;
+    pcb->filename = NULL;
 
     return pcb;
 }

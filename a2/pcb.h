@@ -13,6 +13,9 @@
  * job_length_score: for EXEC AGING use only, stores the job length score
  * pageTable: array to store page numbers
  * pageLoaded: array to track loaded pages
+ * completed: boolean showing whether program is loaded completely
+ * *fp: file that we need to read
+ * *filename: name of the file for shellmemory
  */
 typedef struct
 {
@@ -24,9 +27,10 @@ typedef struct
     int job_length_score;
     int pageTable[MAX_PAGES];
     bool pageLoaded[MAX_PAGES];
-    bool pageFault;
-    int lastAccessed[MAX_PAGES];
-}PCB;
+    bool completed;
+    FILE *fp;
+    char *filename;
+} PCB;
 
 int generatePID();
 PCB * makePCB();

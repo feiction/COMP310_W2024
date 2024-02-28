@@ -64,10 +64,13 @@ bool execute_process(QueueNode *node, int quanta){
     
     for (int i=0; i < quanta; i++){
 
-        if (pcb->pageFault) {
+        if (!pcb->completed) {
             bool pageFetched = fetch_page(pcb);
+            if (!pageFetched) {
+                printf("there was probably something wrong that u need to debug\n");
+            }
 
-            if (pageFetched) {
+            if (!pcb->completed) {
                 return false;
             } else {
                 terminate_process(node);
