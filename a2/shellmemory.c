@@ -25,7 +25,7 @@ const int VAR_STORE_SIZE = 10;
 #endif
 
 const int FRAME_SIZE = 3;
-const int THRESHOLD = FRAME_STORE_SIZE * FRAME_STORE_SIZE;
+const int THRESHOLD = FRAME_STORE_SIZE;
 
 
 // Helper functions
@@ -71,7 +71,7 @@ void mem_init_variable(){
 // Set key value pair
 void mem_set_value(char *var_in, char *value_in) {
 	int i;
-	for (i=0; i<1000; i++){
+	for (i=THRESHOLD; i<SHELL_MEM_LENGTH; i++){
 		if (strcmp(shellmemory[i].var, var_in) == 0){
 			shellmemory[i].value = strdup(value_in);
 			return;
@@ -79,7 +79,7 @@ void mem_set_value(char *var_in, char *value_in) {
 	}
 
 	//Value does not exist, need to find a free spot.
-	for (i=0; i<1000; i++){
+	for (i=THRESHOLD; i<SHELL_MEM_LENGTH; i++){
 		if (strcmp(shellmemory[i].var, "none") == 0){
 			shellmemory[i].var = strdup(var_in);
 			shellmemory[i].value = strdup(value_in);
@@ -94,7 +94,7 @@ void mem_set_value(char *var_in, char *value_in) {
 //get value based on input key
 char *mem_get_value(char *var_in) {
 	int i;
-	for (i=0; i<1000; i++){
+	for (i=THRESHOLD; i<SHELL_MEM_LENGTH; i++){
 		if (strcmp(shellmemory[i].var, var_in) == 0){
 			return strdup(shellmemory[i].value);
 		} 
@@ -116,7 +116,43 @@ void printShellMemory(){
     }
 	printf("\n\t%d lines in total, %d lines in use, %d lines free\n\n", SHELL_MEM_LENGTH, SHELL_MEM_LENGTH-count_empty, count_empty);
 }
+int find_available_slot() {
+    bool slot_found = false;
+    int start_index = 0;
+    while (!slot_found && start_index < THRESHOLD-2) {
+        if (strcmp(shellmemory[start_index].var, "none") == 0 &&
+            strcmp(shellmemory[start_index + 1].var, "none") == 0 &&
+            strcmp(shellmemory[start_index + 2].var, "none") == 0) {
+            slot_found = true;
+        } else {
+            start_index+=FRAME_SIZE;
+        }
+    }
 
+    if (slot_found) {
+        return start_index;
+    } else {
+        return -1;
+    }
+}
+
+int find_unavailable_slot() {
+    bool slot_found = false;
+    int start_index = 0;
+    while (!slot_found && start_index < THRESHOLD - 2) {
+        if (strcmp(shellmemory[start_index].var, "none") != 0){
+            slot_found = true;
+        } else {
+            start_index += FRAME_SIZE;
+        }
+    }
+
+    if (slot_found) {
+        return start_index;
+    } else {
+        return -1;
+    }
+}
 
 /*
  * Function:  addFileToMem 
@@ -135,67 +171,207 @@ void printShellMemory(){
  * 
  * returns: error code, 21: no space left
  */
-int load_file(FILE* fp, int* pStart, int* pEnd, char* filename)
-{
-	char *line;
-    size_t i;
+int load_file(FILE* fp, PCB* pcb, char* filename) {
+    char *line;
+    size_t i = 0;
     int error_code = 0;
-	bool hasSpaceLeft = false;
-	bool flag = true;
-	i=0;
-	size_t candidate;
-	while(flag){
-		flag = false;
-		for (i; i < SHELL_MEM_LENGTH; i++){
-			if(strcmp(shellmemory[i].var,"none") == 0){
-				*pStart = (int)i;
-				hasSpaceLeft = true;
-				break;
-			}
-		}
-		candidate = i;
-		for(i; i < SHELL_MEM_LENGTH; i++){
-			if(strcmp(shellmemory[i].var,"none") != 0){
-				flag = true;
-				break;
-			}
-		}
-	}
-	i = candidate;
-	//shell memory is full
-	if(hasSpaceLeft == 0){
-		error_code = 21;
-		return error_code;
-	}
-    
-    
-    for (size_t j = i; j < THRESHOLD; j++) {
-        if(feof(fp)) {
-            *pEnd = (int)j-1;
-            break;
-        } else {
-            line = calloc(1, THRESHOLD);
-            if (fgets(line, THRESHOLD, fp) == NULL) {
+    bool flag = true;
+    size_t frame_index = find_available_slot();
+    if (frame_index == -1) {
+        error_code = 21;
+        return error_code;
+    }
+    size_t page_index = 0;
+    pcb->start = frame_index;
+    pcb->PC = pcb->start;
+	pcb->filename = strdup(filename);
+	pcb->file = fp;
+
+    int lines_loaded = 0;
+    bool load_next_page = true;
+
+    while (!feof(fp) && load_next_page && frame_index <THRESHOLD-2) {
+        size_t frame_start = frame_index;
+        for (int i = 0; i < FRAME_SIZE && lines_loaded < 6; i++) {
+            if (feof(fp)) {
+                pcb->end = frame_index - 1;
+                break;
+            }
+
+            line = calloc(1, sizeof(char) * 100);
+            if (fgets(line, sizeof(char) * 100, fp) == NULL) {
                 continue;
             }
-			
-            shellmemory[j].var = strdup(filename);
-            shellmemory[j].value = strndup(line, strlen(line));
+
+            shellmemory[frame_index].var = strdup(filename);
+            shellmemory[frame_index].value = strndup(line, strlen(line));
             free(line);
+            frame_index++;
+            lines_loaded++;
+
+            // Check if page completed
+            if (lines_loaded % 3 == 0 || feof(fp)) {
+                pcb->pagetable[page_index] = (frame_start) / 3;
+                pcb->pageLoaded[page_index] = true; // mark page as loaded
+                page_index++;
+                pcb->pageCounter++;
+
+                // If two pages loaded or the file is small, stop loading more pages.
+                if (page_index == 2 || feof(fp)) {
+                    load_next_page = false;
+                }
+
+            }
+        }
+       
+        if (frame_index > THRESHOLD) {
+            error_code = 21;
+            break;
         }
     }
 
-	//no space left to load the entire file into shell memory
-	if (!feof(fp)) {
-		error_code = 21;
-		// clean up the file in memory
-		for (int j = 0; j <= THRESHOLD; j++) {
-			shellmemory[j].var = "none";
-			shellmemory[j].value = "none";
-		}
-		return error_code;
+    pcb->end = frame_index - 1;
+    //printShellMemory();
+    return error_code;
+}
+
+int load_frame(PCB* pcb) {
+    char *line;
+    int error_code = 0;
+    FILE* fp;
+	char* filename = pcb->filename;
+   // fp = pcb->file;
+	fp = fopen(filename, "r");
+	
+    
+   
+	int i;
+	for (i = 0; i < MAX_PAGES; i++) {
+        if (pcb->pagetable[i] == -1) {
+            break;
+        }
+    }
+    size_t page_index = i;
+
+	for (int i = 0; i< pcb->pageCounter*3; i++){
+		line = calloc(1, sizeof(char) * 100);
+		fgets(line, sizeof(char) * 100, fp);
+        if (feof(fp)) {
+            return -2;
+        }
+		free(line);
 	}
 
+    if (feof(fp)) {
+		return -2;
+	}
+    size_t frame_index = find_available_slot();
+    if (frame_index == -1) {
+        error_code = -1;
+        return error_code;
+    }
+
+
+    pcb->start = frame_index;  
+    pcb->PC = frame_index;
+	
+	while (!feof(fp)){
+       
+		frame_index = find_available_slot();
+		size_t frame_start = frame_index;
+   
+		if (frame_index == -1) {
+			return -1;
+		}
+		for (int i = 0; i < FRAME_SIZE; i++) {
+			if (feof(fp)) {
+				pcb->end = frame_index - 1;
+				break;
+			}
+			line = calloc(1, sizeof(char) * 100);
+            if (fgets(line, sizeof(char) * 100, fp) == NULL) {
+                continue;
+            }
+			shellmemory[frame_index].var = strdup(filename);
+			shellmemory[frame_index].value = strndup(line, strlen(line));
+			free(line);
+			frame_index++;
+
+		}
+
+		pcb->pagetable[page_index] = (frame_start) / 3;
+		pcb->pageLoaded[page_index] = true;
+		page_index++;
+        pcb->pageCounter++;
+	
+	}
+	pcb->pageFault = false;
+    pcb->end = frame_index - 1;
+
+    //printShellMemory();
+
+    return error_code;
+}
+
+int remove_frame(PCB* pcb) {
+    char *line;
+    int error_code = 0;
+    FILE* fp;
+    char* filename = pcb->filename;
+    
+    // Open the file
+    fp = fopen(filename, "r");
+    
+    // Check if the file opened successfully
+    if (fp == NULL) {
+        printf("Error opening file '%s'.\n", filename);
+        return -1;
+    }
+    
+    // Find the frame index of the first page table entry
+    size_t frame_index = find_unavailable_slot();
+	pcb->start = frame_index;
+	pcb->PC = pcb->start;
+    int page_index = 0;
+	int i;
+	printf("%s\n", "Page fault! Victim page contents:");
+    // Loop through each page table entry
+    for(i = 0; i < FRAME_SIZE; i++){
+        // Check if the page is loaded
+        if (shellmemory[frame_index].var != NULL) {
+			printf("%s", shellmemory[frame_index].value);
+            free(shellmemory[frame_index].var);
+            free(shellmemory[frame_index].value);
+            
+            // Mark the frame as available by resetting its entry in shellmemory
+            shellmemory[frame_index].var = "none";
+            shellmemory[frame_index].value = "none";
+            frame_index++;
+            // Update page table and pageLoaded arrays
+        }
+        
+        // Move to the next frame index
+    }
+    printf("%s\n", "End of victim page contents.");
+	
+	//load_frame(pcb);
+    
+	pcb->pagetable[page_index] = -1;
+	pcb->pageLoaded[page_index] = false;
+	page_index++;
+    
+    // Close the file
+    fclose(fp);
+     
+    // Reset page fault flag
+    pcb->pageFault = false;
+    
+    // Print the updated shell memory
+    //printShellMemory();
+	/*for (int i = 0; i < MAX_PAGES; i++) {
+        printf("Page %d: %d, %d\n", i, pcb->pagetable[i], pcb->pageFault);
+    }*/
+    
     return error_code;
 }
 

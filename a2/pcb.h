@@ -2,7 +2,7 @@
 #define PCB_H
 #include <stdbool.h>
 
-#define MAX_PAGES (1000/3)
+#define MAX_PAGES (10)
 /*
  * Struct:  PCB 
  * --------------------
@@ -15,15 +15,23 @@
 typedef struct
 {
     bool priority;
+    bool pageFault;
+    bool terminated;
+    int currentPage;
     int pid;
     int PC;
     int start;
     int end;
     int job_length_score;
+    int pageCounter;
+    int currentLine;
     int pagetable[MAX_PAGES];
+    char *filename;
+    bool pageLoaded[MAX_PAGES];
+    FILE* file;
 }PCB;
 
 int generatePID();
-PCB * makePCB(int start, int end);
+PCB * makePCB();
 int getPageIdx(PCB* pcb);
 #endif

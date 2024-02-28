@@ -14,9 +14,10 @@
 bool active = false;
 bool debug = false;
 bool in_background = false;
-
+int count;
 int process_initialize(char *filename){
     FILE* fp;
+    FILE* fp2;
     int* start = (int*)malloc(sizeof(int));
     int* end = (int*)malloc(sizeof(int));
     
@@ -24,31 +25,38 @@ int process_initialize(char *filename){
     if(fp == NULL){
 		return FILE_DOES_NOT_EXIST;
     }
+    int count = count_files_backing();
     int copy_to_backing = copyScript(filename);
     if(copy_to_backing != 0){
         return FILE_ERROR;
     }
+    fclose(fp);
+
     char backingstore_filename[strlen(filename) + strlen(BACKING_STORE_DIR) + 1];
     strcpy(backingstore_filename, BACKING_STORE_DIR);
-    strcat(backingstore_filename, filename);
-    int error_code = load_file(fp, start, end, backingstore_filename);
+    char newFilename[256];
+    snprintf(newFilename, sizeof(newFilename), "prog%d", count);
+    strcat(backingstore_filename, newFilename);
+    fp2 = fopen(backingstore_filename, "rt");
+    PCB* newPCB = makePCB();
 
+    int error_code = load_file(fp2, newPCB, backingstore_filename);
 
     if(error_code != 0){
-        fclose(fp);
+        fclose(fp2);
         return FILE_ERROR;
     }
-    PCB* newPCB = makePCB(*start,*end);
+   
     QueueNode *node = malloc(sizeof(QueueNode));
     node->pcb = newPCB;
 
     ready_queue_add_to_tail(node);
 
-    fclose(fp);
+    fclose(fp2);
     return 0;
 }
 
-int shell_process_initialize(){
+/*int shell_process_initialize(){
     //Note that "You can assume that the # option will only be used in batch mode."
     //So we know that the input is a file, we can directly load the file into ram
     int* start = (int*)malloc(sizeof(int));
@@ -67,25 +75,64 @@ int shell_process_initialize(){
 
     freopen("/dev/tty", "r", stdin);
     return 0;
-}
+}*/
 
 bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
     for(int i=0; i<quanta; i++){
+        bool page_fault = pcb->currentPage > pcb->pageCounter;
+      
+        if (page_fault) {
+
+            int avail = load_frame(pcb);
+            if (avail == -2){
+
+                in_background = false;
+                terminate_process(node);
+                return true;
+            }
+            while(avail == -1) {
+
+                remove_frame(pcb); 
+                    
+                avail =load_frame(pcb);
+            }
+            return false;
+        }
         line = mem_get_value_at_line(pcb->PC++);
         in_background = true;
         if(pcb->priority) {
             pcb->priority = false;
         }
+        /* comment this out
         if(pcb->PC>pcb->end){
+            printf("parsed: ");
             parseInput(line);
-            terminate_process(node);
+            //terminate_process(node);
             in_background = false;
+            //return true;
+        }*/
+
+        if(strcmp(line, "none")!=0) {
+            
+            parseInput(line);
+        }
+        else {
+
+            in_background = false;
+            terminate_process(node);
             return true;
         }
-        parseInput(line);
         in_background = false;
+        if (pcb->currentLine == 2) {
+            pcb->currentLine = 0;
+            pcb->currentPage++;
+        } 
+        else {
+            pcb->currentLine++;
+        }
+    
     }
     return false;
 }
@@ -98,7 +145,11 @@ void *scheduler_FCFS(){
             else break;   
         }
         cur = ready_queue_pop_head();
-        execute_process(cur, MAX_INT);
+        if (!execute_process(cur, MAX_INT)) {
+             ready_queue_add_to_tail(cur);
+        }
+
+
     }
     return 0;
 }
@@ -159,13 +210,20 @@ void *scheduler_AGING(){
 void *scheduler_RR(void *arg){
     int quanta = ((int *) arg)[0];
     QueueNode *cur;
+
     while(true){
         if(is_ready_empty()){
+            //printf("here");
             if(active) continue;
             else break;
+             
         }
         cur = ready_queue_pop_head();
-        if(!execute_process(cur, quanta)) {
+
+        if(execute_process(cur, quanta)) {
+            
+        }
+        else{
             ready_queue_add_to_tail(cur);
         }
     }
