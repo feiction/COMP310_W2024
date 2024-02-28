@@ -11,6 +11,7 @@
 struct memory_struct{
 	char *var;
 	char *value;
+    int access;
 };
 
 struct memory_struct shellmemory[SHELL_MEM_LENGTH];
@@ -58,6 +59,7 @@ void mem_init(){
 	for (i=0; i<1000; i++){		
 		shellmemory[i].var = "none";
 		shellmemory[i].value = "none";
+		shellmemory[i].access = 0;
 	}
 }
 
@@ -65,6 +67,7 @@ void mem_init_variable(){
 	for (int i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
         shellmemory[i].var = "none";
         shellmemory[i].value = "none";
+		shellmemory[i].access = 0;
     }
 }
 
@@ -74,6 +77,7 @@ void mem_set_value(char *var_in, char *value_in) {
 	for (i=THRESHOLD; i<SHELL_MEM_LENGTH; i++){
 		if (strcmp(shellmemory[i].var, var_in) == 0){
 			shellmemory[i].value = strdup(value_in);
+		    shellmemory[i].access++;
 			return;
 		} 
 	}
@@ -83,6 +87,7 @@ void mem_set_value(char *var_in, char *value_in) {
 		if (strcmp(shellmemory[i].var, "none") == 0){
 			shellmemory[i].var = strdup(var_in);
 			shellmemory[i].value = strdup(value_in);
+		    shellmemory[i].access++;
 			return;
 		} 
 	}
@@ -96,6 +101,7 @@ char *mem_get_value(char *var_in) {
 	int i;
 	for (i=THRESHOLD; i<SHELL_MEM_LENGTH; i++){
 		if (strcmp(shellmemory[i].var, var_in) == 0){
+            shellmemory[i].access++;
 			return strdup(shellmemory[i].value);
 		} 
 	}
@@ -205,6 +211,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
 
             shellmemory[frame_index].var = strdup(filename);
             shellmemory[frame_index].value = strndup(line, strlen(line));
+            shellmemory[frame_index].access++;
             free(line);
             frame_index++;
             lines_loaded++;
@@ -393,5 +400,6 @@ void mem_free_lines_between(int start, int end){
 		}	
 		shellmemory[i].var = "none";
 		shellmemory[i].value = "none";
-	}
+        shellmemory[i].access = 0;
+    }
 }
