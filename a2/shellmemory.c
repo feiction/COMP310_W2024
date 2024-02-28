@@ -3,6 +3,7 @@
 #include<stdio.h>
 #include<stdbool.h>
 #include <dirent.h>
+#include <limits.h>
 #include "pcb.h"
 
 #define SHELL_MEM_LENGTH 1000
@@ -122,6 +123,7 @@ void printShellMemory(){
     }
 	printf("\n\t%d lines in total, %d lines in use, %d lines free\n\n", SHELL_MEM_LENGTH, SHELL_MEM_LENGTH-count_empty, count_empty);
 }
+
 int find_available_slot() {
     bool slot_found = false;
     int start_index = 0;
@@ -142,22 +144,28 @@ int find_available_slot() {
     }
 }
 
-int find_unavailable_slot() {
-    bool slot_found = false;
-    int start_index = 0;
-    while (!slot_found && start_index < THRESHOLD - 2) {
-        if (strcmp(shellmemory[start_index].var, "none") != 0){
-            slot_found = true;
-        } else {
-            start_index += FRAME_SIZE;
+int find_lru_frame() {
+    int min_access_sum = INT_MAX;  // initialize with max possible integer value
+    int lru_frame_index = -1;      // no frame found
+    int current_sum;
+
+    // Check for the frame with lowest sum of access times
+    for (int start_index = 0; start_index <= THRESHOLD - FRAME_SIZE; start_index += FRAME_SIZE) {
+        current_sum = 0;
+        
+        // Sum the access times for current frame
+        for (int i = 0; i < FRAME_SIZE; i++) {
+            current_sum += shellmemory[start_index + i].access;
+        }
+
+        // Check if current frame has lowest sum of access times
+        if (current_sum < min_access_sum) {
+            min_access_sum = current_sum;
+            lru_frame_index = start_index;
         }
     }
 
-    if (slot_found) {
-        return start_index;
-    } else {
-        return -1;
-    }
+    return lru_frame_index;
 }
 
 /*
@@ -196,7 +204,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
     int lines_loaded = 0;
     bool load_next_page = true;
 
-    while (!feof(fp) && load_next_page && frame_index <THRESHOLD-2) {
+    while (!feof(fp) && load_next_page && frame_index < THRESHOLD - 2) {
         size_t frame_start = frame_index;
         for (int i = 0; i < FRAME_SIZE && lines_loaded < 6; i++) {
             if (feof(fp)) {
@@ -252,9 +260,6 @@ int load_frame(PCB* pcb) {
 	char* filename = pcb->filename;
    // fp = pcb->file;
 	fp = fopen(filename, "r");
-	
-    
-   
 	int i;
 	for (i = 0; i < MAX_PAGES; i++) {
         if (pcb->pagetable[i] == -1) {
@@ -339,7 +344,7 @@ int remove_frame(PCB* pcb) {
     }
     
     // Find the frame index of the first page table entry
-    size_t frame_index = find_unavailable_slot();
+    size_t frame_index = find_lru_frame();
 	pcb->start = frame_index;
 	pcb->PC = pcb->start;
     int page_index = 0;

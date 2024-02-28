@@ -56,27 +56,6 @@ int process_initialize(char *filename){
     return 0;
 }
 
-/*int shell_process_initialize(){
-    //Note that "You can assume that the # option will only be used in batch mode."
-    //So we know that the input is a file, we can directly load the file into ram
-    int* start = (int*)malloc(sizeof(int));
-    int* end = (int*)malloc(sizeof(int));
-    int error_code = 0;
-    error_code = load_file(stdin, start, end, "_SHELL");
-    if(error_code != 0){
-        return error_code;
-    }
-    PCB* newPCB = makePCB(*start,*end);
-    newPCB->priority = true;
-    QueueNode *node = malloc(sizeof(QueueNode));
-    node->pcb = newPCB;
-
-    ready_queue_add_to_head(node);
-
-    freopen("/dev/tty", "r", stdin);
-    return 0;
-}*/
-
 bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
@@ -85,18 +64,18 @@ bool execute_process(QueueNode *node, int quanta){
        // printf("%s, %d, %d\n", pcb->filename, pcb->currentPage, pcb->pageCounter);
         if (page_fault) {
             //printf("here");
-            int avail = load_frame(pcb);
-            if (avail == -2){
+            int errorcode = load_frame(pcb);
+            if (errorcode == -2){
                 //printf("jere\n");
                 in_background = false;
                 terminate_process(node);
                 return true;
             }
-            while(avail == -1) {
+            while(errorcode == -1) {
                 //printf("pcb file: %s\n", pcb->filename);
-                remove_frame(pcb); 
+                remove_frame(pcb);
                     
-                avail =load_frame(pcb);
+                errorcode = load_frame(pcb);
             }
             return false;
         }
@@ -219,18 +198,6 @@ void *scheduler_RR(void *arg){
              
         }
         cur = ready_queue_pop_head();
-        /*
-        if (cur->pcb->pageFault) {
-                int avail = load_frame(cur->pcb);
-                while(avail == -1) {
-                    printf("pcb file: %s\n", cur->pcb->filename);
-                    remove_frame(cur->pcb); 
-                    
-                    avail =load_frame(cur->pcb);
-                }
-                ready_queue_add_to_tail(cur);
-                continue;
-        }*/
         if(execute_process(cur, quanta)) {
             
         }
