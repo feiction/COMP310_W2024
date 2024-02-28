@@ -11,6 +11,32 @@
 #include "ready_queue.h"
 
 QueueNode *head = NULL;
+LRUNode *LRU_frame = NULL;
+LRUNode *MRU_frame = NULL;
+
+
+int get_LRU() {
+	LRUNode *temp = LRU_frame;
+	int frame = temp->frame_index;
+	LRU_frame = temp->next;
+	free(temp);
+	return frame;
+}
+
+void add_MRU(int frame_index) {
+	LRUNode* MRU = (LRUNode*)malloc(sizeof(LRUNode));
+        MRU->frame_index = frame_index;
+		
+	if (MRU_frame == NULL) {
+		LRU_frame = MRU;
+	} else { 
+		MRU_frame->next = MRU;
+	}
+
+	MRU_frame = MRU;
+
+	return;
+}
 
 void ready_queue_destory()
 {

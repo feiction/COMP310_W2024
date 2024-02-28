@@ -6,6 +6,11 @@ typedef struct QueueNode{
     PCB *pcb;
     struct QueueNode *next;
 } QueueNode;
+typedef struct LRUNode{
+	int frame_index;
+	struct LRUNode *next;
+} LRUNode;
+void add_MRU(int frame_index);
 void ready_queue_destory();
 void ready_queue_add_to_tail(QueueNode *node);
 void print_ready_queue();
