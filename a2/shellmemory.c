@@ -309,8 +309,9 @@ int load_frame(PCB* pcb) {
             }
 			shellmemory[frame_index].var = strdup(filename);
 			shellmemory[frame_index].value = strndup(line, strlen(line));
-			free(line);
-			frame_index++;
+            shellmemory[frame_index].access++;
+            free(line);
+            frame_index++;
 
 		}
 
@@ -357,6 +358,7 @@ int remove_frame(PCB* pcb) {
 			printf("%s", shellmemory[frame_index].value);
             free(shellmemory[frame_index].var);
             free(shellmemory[frame_index].value);
+            shellmemory[frame_index].access = 0;
             
             // Mark the frame as available by resetting its entry in shellmemory
             shellmemory[frame_index].var = "none";
@@ -390,8 +392,9 @@ int remove_frame(PCB* pcb) {
 }
 
 char * mem_get_value_at_line(int index){
-	if(index<0 || index > SHELL_MEM_LENGTH) return NULL; 
-	return shellmemory[index].value;
+	if(index<0 || index > SHELL_MEM_LENGTH) return NULL;
+    shellmemory[index].access++;
+    return shellmemory[index].value;
 }
 
 
