@@ -202,7 +202,6 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
             if (fgets(line, sizeof(char) * 100, fp) == NULL) {
                 continue;
             }
-            printf("%s\n", line);
 
             shellmemory[frame_index].var = strdup(filename);
             shellmemory[frame_index].value = strndup(line, strlen(line));
@@ -232,7 +231,6 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
     }
 
     pcb->end = frame_index - 1;
-    printf("%d", error_code);
     //printShellMemory();
     return error_code;
 }
@@ -269,7 +267,6 @@ int load_frame(PCB* pcb) {
 	}
     size_t frame_index = find_available_slot();
     if (frame_index == -1) {
-        printf("error code -1\n");
         error_code = -1;
         return error_code;
     }

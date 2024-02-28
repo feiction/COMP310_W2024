@@ -82,18 +82,18 @@ bool execute_process(QueueNode *node, int quanta){
     PCB *pcb = node->pcb;
     for(int i=0; i<quanta; i++){
         bool page_fault = pcb->currentPage > pcb->pageCounter;
-       // printf("%s, %d, %d\n", pcb->filename, pcb->currentPage, pcb->pageCounter);
+      
         if (page_fault) {
-            //printf("here");
+
             int avail = load_frame(pcb);
             if (avail == -2){
-                //printf("jere\n");
+
                 in_background = false;
                 terminate_process(node);
                 return true;
             }
             while(avail == -1) {
-                //printf("pcb file: %s\n", pcb->filename);
+
                 remove_frame(pcb); 
                     
                 avail =load_frame(pcb);
@@ -113,13 +113,13 @@ bool execute_process(QueueNode *node, int quanta){
             in_background = false;
             //return true;
         }*/
-       // printf("line: %s\n", line);
+
         if(strcmp(line, "none")!=0) {
             
             parseInput(line);
         }
         else {
-            //printf("hereeee\n");
+
             in_background = false;
             terminate_process(node);
             return true;
@@ -210,7 +210,7 @@ void *scheduler_AGING(){
 void *scheduler_RR(void *arg){
     int quanta = ((int *) arg)[0];
     QueueNode *cur;
-    //printf("%d\n", count_files_backing());
+
     while(true){
         if(is_ready_empty()){
             //printf("here");
@@ -219,25 +219,11 @@ void *scheduler_RR(void *arg){
              
         }
         cur = ready_queue_pop_head();
-        /*
-        if (cur->pcb->pageFault) {
-                int avail = load_frame(cur->pcb);
-                while(avail == -1) {
-                    printf("pcb file: %s\n", cur->pcb->filename);
-                    remove_frame(cur->pcb); 
-                    
-                    avail =load_frame(cur->pcb);
-                }
-                ready_queue_add_to_tail(cur);
-                continue;
-        }*/
+
         if(execute_process(cur, quanta)) {
             
         }
         else{
-            if (cur->pcb->pageFault) {
-                //printf("hello");
-            }
             ready_queue_add_to_tail(cur);
         }
     }
