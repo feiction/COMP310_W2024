@@ -26,18 +26,8 @@ PCB* makePCB(){
     pcb->file = NULL;
     
     for (int i = 0; i < MAX_PAGES; i++) {
-        pcb->pagetable[i] = -1;
         pcb->pageLoaded[i] = false;
     }
 
     return pcb;
-}
-
-int getPageIdx(PCB* pcb) {
-    for (int i = 9; i >= 0; i--) {
-        if (pcb->pagetable[i] != -1) {
-            return i + 1;
-        }
-    }
-    return 0;
 }

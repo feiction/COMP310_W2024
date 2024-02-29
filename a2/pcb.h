@@ -16,7 +16,6 @@
  * job_length_score - An integer used for scheduling, representing the process's job length
  * pageCounter - An integer tracking the number of pages loaded for this process
  * currentLine - An integer indicating the current line being executed within the process
- * pagetable - An array of integers representing the page table for the process
  * filename - A string storing the name of the file associated with the process
  * pageLoaded - An array of booleans indicating the loading status of each page
  * file - A pointer to the FILE structure associated with the process's program code
@@ -32,7 +31,6 @@ typedef struct
     int job_length_score;
     int pageCounter;
     int currentLine;
-    int pagetable[MAX_PAGES];
     char *filename;
     bool pageLoaded[MAX_PAGES];
     FILE* file;

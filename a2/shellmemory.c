@@ -203,7 +203,6 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
     }
 
     // Initialize some variables
-    size_t page_index = 0;
     pcb->start = frame_index;
     pcb->PC = pcb->start;
 	pcb->filename = strdup(filename);
@@ -235,13 +234,11 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
 
             // Check if page completed
             if (lines_loaded % 3 == 0 || feof(fp)) {
-                pcb->pagetable[page_index] = (frame_start) / 3;
-                pcb->pageLoaded[page_index] = true; // mark page as loaded
-                page_index++;
+                pcb->pageLoaded[pcb->pageCounter] = true; // mark page as loaded
                 pcb->pageCounter++;
 
                 // If two pages already loaded, stop loading more pages
-                if (page_index == 2) {
+                if (pcb->pageCounter == 2) {
                     load_next_page = false;
                 }
             }
@@ -276,15 +273,6 @@ int load_frame(PCB* pcb) {
 	char* filename = pcb->filename;
 
 	fp = fopen(filename, "r");
-
-    // Find the page index to load the frame into
-	int i;
-	for (i = 0; i < MAX_PAGES; i++) {
-        if (pcb->pagetable[i] == -1) {
-            break;
-        }
-    }
-    size_t page_index = i;
 
     // Skip over lines already loaded to the page table.
 	for (int i = 0; i < pcb->pageCounter*3; i++){
@@ -328,9 +316,7 @@ int load_frame(PCB* pcb) {
 	}
 
     // Update PCB
-	pcb->pagetable[page_index] = (pcb->start) / 3;
-	pcb->pageLoaded[page_index] = true;
-	page_index++;
+	pcb->pageLoaded[pcb->pageCounter] = true;
     pcb->pageCounter++;
 	
     pcb->end = frame_index - 1;
@@ -360,7 +346,6 @@ int remove_frame(PCB* pcb) {
     fp = fopen(filename, "r");
     
     if (fp == NULL) {
-        printf("Error opening file '%s'.\n", filename);
         return -1;
     }
     
@@ -382,11 +367,7 @@ int remove_frame(PCB* pcb) {
     mem_free_lines_between(frame_index, frame_index + FRAME_SIZE - 1);
 
     printf("%s\n", "End of victim page contents.");
-
-	
-	//load_frame(pcb);
     
-	pcb->pagetable[page_index] = -1;
 	pcb->pageLoaded[page_index] = false;
 	page_index++;
     
@@ -395,7 +376,7 @@ int remove_frame(PCB* pcb) {
     // Print the updated shell memory
     //printShellMemory();
 	/*for (int i = 0; i < MAX_PAGES; i++) {
-        printf("Page %d: %d, %d\n", i, pcb->pagetable[i], pcb->pageFault);
+        printf("Page %d: %d, %d\n", i, pcb->pageLoaded[i], pcb->pageFault);
     }*/
     
     return error_code;
