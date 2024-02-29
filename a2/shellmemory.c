@@ -116,6 +116,11 @@ void printShellMemory(){
 	printf("\n\t%d lines in total, %d lines in use, %d lines free\n\n", SHELL_MEM_LENGTH, SHELL_MEM_LENGTH-count_empty, count_empty);
 }
 
+
+/* 
+ * Finds the first available memory slot that can accommodate a frame of size FRAME_SIZE
+ * Returns the start index of the available slot or -1 if no slot is found
+ */
 int find_available_slot() {
     bool slot_found = false;
     int start_index = 0;
@@ -136,26 +141,21 @@ int find_available_slot() {
     }
 }
 
-int find_unavailable_slot() {
+/* 
+ * Identifies the least recently used (LRU) memory slot based on access time
+ * Returns the index of the LRU frame or -1 if all slots are available
+ */
+int find_lru_slot() {
     int lru_index = -1;
-    int lru_time = 9999;  // Use INT_MAX to ensure any valid time is lower.
+    int lru_time = 9999; // Initialize a high value
 
     for (int i = 0; i < THRESHOLD; i += FRAME_SIZE) {
-        bool is_frame_full = strcmp(shellmemory[i].var, "none") != 0;
-        int frame_min_access_time = is_frame_full ? shellmemory[i].accessed : 9999;
+        // Check the accessed time of the first unit in the current frame
+        int frame_access_time = shellmemory[i].accessed;
 
-        for (int j = 1; j < FRAME_SIZE && is_frame_full; j++) {
-            if (strcmp(shellmemory[i + j].var, "none") == 0) {
-                is_frame_full = false;  // Frame isn't fully utilized
-            } else {
-                if (shellmemory[i + j].accessed < frame_min_access_time) {
-                    frame_min_access_time = shellmemory[i + j].accessed;
-                }
-            }
-        }
-
-        if (is_frame_full && frame_min_access_time < lru_time) {
-            lru_time = frame_min_access_time;
+        // Update the LRU frame if the current one has an older (smaller) access time
+        if (frame_access_time < lru_time) {
+            lru_time = frame_access_time;
             lru_index = i;
         }
     }
@@ -163,6 +163,10 @@ int find_unavailable_slot() {
     return lru_index;
 }
 
+/* 
+ * Loads a file into the memory, assigning frames to the PCB's page table
+ * Returns an error code if memory allocation fails or the end of the file is reached
+ */
 int load_file(FILE* fp, PCB* pcb, char* filename) {
     char *line;
     size_t i = 0;
@@ -316,7 +320,7 @@ int remove_frame(PCB* pcb) {
     }
     
     // Find the frame index of the first page table entry
-    size_t frame_index = find_unavailable_slot();
+    size_t frame_index = find_lru_slot();
 	pcb->start = frame_index;
 	pcb->PC = pcb->start;
     int page_index = 0;
@@ -368,7 +372,6 @@ char * mem_get_value_at_line(int index){
     shellmemory[index].accessed = ++global_access_time;
 	return shellmemory[index].value;
 }
-
 
 void mem_free_lines_between(int start, int end){
 	for (int i=start; i<=end && i<SHELL_MEM_LENGTH; i++){
