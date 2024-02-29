@@ -292,6 +292,12 @@ int exec(char *fname1, char *fname2, char *fname3) {
 	}
 }
 
+/*
+ * Resets variable memory
+ *
+ * Returns:
+ * int - error code.
+ */
 int resetmem() {
 	mem_init_variable();
     return 0;
