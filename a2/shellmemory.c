@@ -265,6 +265,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
  *
  * Returns:
  * int - error code indicating the status of the frame loading operation
+ * error code -1: 
  */
 int load_frame(PCB* pcb) {
     char *line;
@@ -279,20 +280,19 @@ int load_frame(PCB* pcb) {
 		line = calloc(1, sizeof(char) * 100);
 		fgets(line, sizeof(char) * 100, fp);
         if (feof(fp)) {
-            return -2;
+            return -2;              // no more lines to be read
         }
 		free(line);
 	}
 
     if (feof(fp)) {
-		return -2;
+		return -2;                  // no more lines to be read
 	}
 
     // Find available slot for loading the frame
     size_t frame_index = find_available_slot();
     if (frame_index == -1) {
-        error_code = -1;
-        return error_code;
+        return -1;                  // no more space in the frame store
     }
 
     pcb->start = frame_index;  
@@ -387,5 +387,3 @@ char *mem_get_value_at_line(int index){
     shellmemory[index].accessed = ++global_access_time;
 	return shellmemory[index].value;
 }
-
-

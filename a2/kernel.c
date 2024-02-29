@@ -71,14 +71,14 @@ int process_initialize(char *filename){
 bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
-    for(int i=0; i<quanta; i++){
+    for(int i=0; i < quanta; i++){
         // Check if there is page fault by checking if the current page we are reading is bigger
         // than the page count
         bool is_page_fault = pcb->currentPage > pcb->pageCounter;
       
         if (is_page_fault) {
             // Load 1 frame
-            int load_frame_error = load_frame(pcb);
+            int load_frame_error = load_frame(pcb); // return 0 on success
 
             // check error code -2, means there were no more lines to be read
             // terminate process
