@@ -56,27 +56,6 @@ int process_initialize(char *filename){
     return 0;
 }
 
-/*int shell_process_initialize(){
-    //Note that "You can assume that the # option will only be used in batch mode."
-    //So we know that the input is a file, we can directly load the file into ram
-    int* start = (int*)malloc(sizeof(int));
-    int* end = (int*)malloc(sizeof(int));
-    int error_code = 0;
-    error_code = load_file(stdin, start, end, "_SHELL");
-    if(error_code != 0){
-        return error_code;
-    }
-    PCB* newPCB = makePCB(*start,*end);
-    newPCB->priority = true;
-    QueueNode *node = malloc(sizeof(QueueNode));
-    node->pcb = newPCB;
-
-    ready_queue_add_to_head(node);
-
-    freopen("/dev/tty", "r", stdin);
-    return 0;
-}*/
-
 bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
@@ -84,19 +63,15 @@ bool execute_process(QueueNode *node, int quanta){
         bool page_fault = pcb->currentPage > pcb->pageCounter;
       
         if (page_fault) {
-
             int avail = load_frame(pcb);
             if (avail == -2){
-
                 in_background = false;
                 terminate_process(node);
                 return true;
             }
-            while(avail == -1) {
-
-                remove_frame(pcb); 
-                    
-                avail =load_frame(pcb);
+            if (avail == -1) {
+                remove_frame(pcb);
+                load_frame(pcb);
             }
             return false;
         }
@@ -105,21 +80,10 @@ bool execute_process(QueueNode *node, int quanta){
         if(pcb->priority) {
             pcb->priority = false;
         }
-        /* comment this out
-        if(pcb->PC>pcb->end){
-            printf("parsed: ");
-            parseInput(line);
-            //terminate_process(node);
-            in_background = false;
-            //return true;
-        }*/
 
         if(strcmp(line, "none")!=0) {
-            
             parseInput(line);
-        }
-        else {
-
+        } else {
             in_background = false;
             terminate_process(node);
             return true;
@@ -128,8 +92,7 @@ bool execute_process(QueueNode *node, int quanta){
         if (pcb->currentLine == 2) {
             pcb->currentLine = 0;
             pcb->currentPage++;
-        } 
-        else {
+        } else {
             pcb->currentLine++;
         }
     
