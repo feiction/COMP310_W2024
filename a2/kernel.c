@@ -78,11 +78,11 @@ bool execute_process(QueueNode *node, int quanta){
       
         if (is_page_fault) {
             // Load 1 frame
-            int avail = load_frame(pcb);
+            int load_frame_error = load_frame(pcb);
 
             // check error code -2, means there were no more lines to be read
             // terminate process
-            if (avail == -2){
+            if (load_frame_error == -2){
                 in_background = false;
                 terminate_process(node);
                 return true;
@@ -90,7 +90,7 @@ bool execute_process(QueueNode *node, int quanta){
 
             // check error code -1, means there was no more space in the frame store
             // so we evict and load frame
-            if (avail == -1) {
+            if (load_frame_error == -1) {
                 remove_frame(pcb);
                 load_frame(pcb);
             }
