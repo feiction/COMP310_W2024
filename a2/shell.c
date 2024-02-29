@@ -15,9 +15,13 @@ int MAX_USER_INPUT = 1000;
 int parseInput(char ui[]);
 int my_mkdir(char *dirname);
 int main(int argc, char *argv[]) {
+
+    // Create or remove files in backing store when shell is created
     system("rm -rf ./backing_store");
     mkdir("./backing_store/", 0700);
     printf("%s\n", "Shell v2.0\n");
+
+    // Print the frame store size and variable store size
     printf("Frame Store Size = %d; Variable Store Size = %d\n", FRAME_STORE_SIZE, VAR_STORE_SIZE);
 
     char prompt = '$';  				// Shell prompt
@@ -84,37 +88,58 @@ int parseInput(char *ui) {
     return errorCode;
 }
 
-
+/*
+ * Counts the number of files executed
+ *
+ * Returns:
+ * int - number of files
+ */
 int count_files_backing() {
-    struct dirent *dp;  //pointer for directory entry
+    // Have to include dirent.h to access a specific directory
+    struct dirent *directory_pointer;
+
+    // Initialize count
     int count = 0;
+    
+    // Open directory and check 
+    DIR *directory = opendir("backing_store");
 
-    DIR *dr = opendir("backing_store");
-
-    if (dr == NULL) {
+    if (directory == NULL) {
         printf("Error opening current directory");
         return -1;
     }
 
-    while ((dp = readdir(dr)) != NULL) {
+    // Increment count
+    while ((directory_pointer = readdir(directory)) != NULL) {
         count ++;
     }
 
-    closedir(dr);
+    closedir(directory);
 
+    // Calibrate count
     return count - 2;
 }
 
-
+/*
+ * Copies the script to the backing_store directory
+ *
+ * Parameters:
+ * char* filenmae - name of the file being loaded into memory
+ * Returns:
+ * int - error code
+ */
 int copyScript(char *filename) {
     FILE *scriptFile, *backingStoreFile;
     char ch;
-    
+
+    // Open original file
     scriptFile = fopen(filename, "r");
     if (scriptFile == NULL) {
         perror("Error opening script file");
         return 1;
     }
+
+    // Naming
     const char *directoryName = "backing_store/";
     const char *scriptBaseName = basename(strdup(filename));
     int count = count_files_backing();
@@ -122,7 +147,7 @@ int copyScript(char *filename) {
     char newFilename[256];
     snprintf(newFilename, sizeof(newFilename), "%sprog%d", directoryName, count);
 
-
+    // Write character by character to the backing store
     backingStoreFile = fopen(newFilename, "w");
     
     if (backingStoreFile == NULL) {
@@ -134,6 +159,7 @@ int copyScript(char *filename) {
         fputc(ch, backingStoreFile);
     }
 
+    // Close files
     fclose(scriptFile);
     fclose(backingStoreFile);
 
