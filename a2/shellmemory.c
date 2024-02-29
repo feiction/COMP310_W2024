@@ -173,7 +173,6 @@ int find_lru_slot() {
             lru_index = i;
         }
     }
-
     return lru_index;
 }
 
@@ -251,7 +250,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
     }
 
     pcb->end = frame_index - 1;
-    //printShellMemory();
+
     return error_code;
 }
 
@@ -279,10 +278,11 @@ int load_frame(PCB* pcb) {
 	for (int i = 0; i < pcb->pageCounter*3; i++){
 		line = calloc(1, sizeof(char) * 100);
 		fgets(line, sizeof(char) * 100, fp);
+        free(line);
         if (feof(fp)) {
             return -2;              // no more lines to be read
         }
-		free(line);
+		
 	}
 
     if (feof(fp)) {
@@ -302,7 +302,7 @@ int load_frame(PCB* pcb) {
 	for (int i = 0; i < FRAME_SIZE; i++) {
 		if (feof(fp)) {
 			pcb->end = frame_index - 1;
-			break;
+            break;
 		}
 		line = calloc(1, sizeof(char) * 100);
         if (fgets(line, sizeof(char) * 100, fp) == NULL) {
@@ -367,17 +367,11 @@ int remove_frame(PCB* pcb) {
     mem_free_lines_between(frame_index, frame_index + FRAME_SIZE - 1);
 
     printf("%s\n", "End of victim page contents.");
-    
+
 	pcb->pageLoaded[page_index] = false;
 	page_index++;
     
     fclose(fp);
-    
-    // Print the updated shell memory
-    //printShellMemory();
-	/*for (int i = 0; i < MAX_PAGES; i++) {
-        printf("Page %d: %d, %d\n", i, pcb->pageLoaded[i], pcb->pageFault);
-    }*/
     
     return error_code;
 }
