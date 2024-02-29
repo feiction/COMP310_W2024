@@ -63,19 +63,15 @@ bool execute_process(QueueNode *node, int quanta){
         bool page_fault = pcb->currentPage > pcb->pageCounter;
       
         if (page_fault) {
-
             int avail = load_frame(pcb);
             if (avail == -2){
-
                 in_background = false;
                 terminate_process(node);
                 return true;
             }
-            while(avail == -1) {
-
-                remove_frame(pcb); 
-                    
-                avail = load_frame(pcb);
+            if (avail == -1) {
+                remove_frame(pcb);
+                load_frame(pcb);
             }
             return false;
         }
@@ -84,21 +80,10 @@ bool execute_process(QueueNode *node, int quanta){
         if(pcb->priority) {
             pcb->priority = false;
         }
-        /* comment this out
-        if(pcb->PC>pcb->end){
-            printf("parsed: ");
-            parseInput(line);
-            //terminate_process(node);
-            in_background = false;
-            //return true;
-        }*/
 
         if(strcmp(line, "none")!=0) {
-            
             parseInput(line);
-        }
-        else {
-
+        } else {
             in_background = false;
             terminate_process(node);
             return true;
@@ -107,8 +92,7 @@ bool execute_process(QueueNode *node, int quanta){
         if (pcb->currentLine == 2) {
             pcb->currentLine = 0;
             pcb->currentPage++;
-        } 
-        else {
+        } else {
             pcb->currentLine++;
         }
     
