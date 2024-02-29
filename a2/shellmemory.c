@@ -72,36 +72,35 @@ void mem_init_variable(){
 
 // Set key value pair
 void mem_set_value(char *var_in, char *value_in) {
-	int i;
-	for (i=THRESHOLD; i<SHELL_MEM_LENGTH; i++){
-		if (strcmp(shellmemory[i].var, var_in) == 0){
-			shellmemory[i].value = strdup(value_in);
-			return;
-		} 
-	}
+    int i;
+    for (i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
+        if (strcmp(shellmemory[i].var, var_in) == 0) {
+            shellmemory[i].value = strdup(value_in);
+            shellmemory[i].accessed = ++global_access_time;  // Update access time
+            return;
+        }
+    }
 
-	//Value does not exist, need to find a free spot.
-	for (i=THRESHOLD; i<SHELL_MEM_LENGTH; i++){
-		if (strcmp(shellmemory[i].var, "none") == 0){
-			shellmemory[i].var = strdup(var_in);
-			shellmemory[i].value = strdup(value_in);
-			return;
-		} 
-	}
-
-	return;
-
+    for (i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
+        if (strcmp(shellmemory[i].var, "none") == 0) {
+            shellmemory[i].var = strdup(var_in);
+            shellmemory[i].value = strdup(value_in);
+            shellmemory[i].accessed = ++global_access_time;  // Update access time
+            return;
+        }
+    }
 }
 
-//get value based on input key
+// Get value based on input key
 char *mem_get_value(char *var_in) {
-	int i;
-	for (i=THRESHOLD; i<SHELL_MEM_LENGTH; i++){
-		if (strcmp(shellmemory[i].var, var_in) == 0){
-			return strdup(shellmemory[i].value);
-		} 
-	}
-	return NULL;
+    int i;
+    for (i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
+        if (strcmp(shellmemory[i].var, var_in) == 0) {
+            shellmemory[i].accessed = ++global_access_time;  // Update access time
+            return strdup(shellmemory[i].value);
+        }
+    }
+    return NULL;
 }
 
 void printShellMemory(){
@@ -138,21 +137,30 @@ int find_available_slot() {
 }
 
 int find_unavailable_slot() {
-    bool slot_found = false;
-    int start_index = 0;
-    while (!slot_found && start_index < THRESHOLD - 2) {
-        if (strcmp(shellmemory[start_index].var, "none") != 0){
-            slot_found = true;
-        } else {
-            start_index += FRAME_SIZE;
+    int lru_index = -1;
+    int lru_time = 9999;  // Use INT_MAX to ensure any valid time is lower.
+
+    for (int i = 0; i < THRESHOLD; i += FRAME_SIZE) {
+        bool is_frame_full = strcmp(shellmemory[i].var, "none") != 0;
+        int frame_min_access_time = is_frame_full ? shellmemory[i].accessed : 9999;
+
+        for (int j = 1; j < FRAME_SIZE && is_frame_full; j++) {
+            if (strcmp(shellmemory[i + j].var, "none") == 0) {
+                is_frame_full = false;  // Frame isn't fully utilized
+            } else {
+                if (shellmemory[i + j].accessed < frame_min_access_time) {
+                    frame_min_access_time = shellmemory[i + j].accessed;
+                }
+            }
+        }
+
+        if (is_frame_full && frame_min_access_time < lru_time) {
+            lru_time = frame_min_access_time;
+            lru_index = i;
         }
     }
 
-    if (slot_found) {
-        return start_index;
-    } else {
-        return -1;
-    }
+    return lru_index;
 }
 
 int load_file(FILE* fp, PCB* pcb, char* filename) {
