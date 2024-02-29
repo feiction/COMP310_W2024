@@ -63,6 +63,8 @@ void mem_init() {
     }
 }
 
+// Part or resetmem()
+// resets the variable memory back to none
 void mem_init_variable(){
 	for (int i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
         shellmemory[i].var = "none";
