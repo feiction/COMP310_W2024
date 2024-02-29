@@ -264,36 +264,34 @@ int load_frame(PCB* pcb) {
     pcb->start = frame_index;  
     pcb->PC = frame_index;
 	
-	while (!feof(fp)){
-       
-		frame_index = find_available_slot();
-		size_t frame_start = frame_index;
-   
-		if (frame_index == -1) {
-			return -1;
-		}
-		for (int i = 0; i < FRAME_SIZE; i++) {
-			if (feof(fp)) {
-				pcb->end = frame_index - 1;
-				break;
-			}
-			line = calloc(1, sizeof(char) * 100);
-            if (fgets(line, sizeof(char) * 100, fp) == NULL) {
-                continue;
-            }
-			shellmemory[frame_index].var = strdup(filename);
-			shellmemory[frame_index].value = strndup(line, strlen(line));
-            shellmemory[frame_index].accessed = ++global_access_time;
-			free(line);
-			frame_index++;
-		}
 
-		pcb->pagetable[page_index] = (frame_start) / 3;
-		pcb->pageLoaded[page_index] = true;
-		page_index++;
-        pcb->pageCounter++;
-	
+	frame_index = find_available_slot();
+	size_t frame_start = frame_index;
+   
+	if (frame_index == -1) {
+		return -1;
 	}
+	for (int i = 0; i < FRAME_SIZE; i++) {
+		if (feof(fp)) {
+			pcb->end = frame_index - 1;
+			break;
+		}
+		line = calloc(1, sizeof(char) * 100);
+        if (fgets(line, sizeof(char) * 100, fp) == NULL) {
+            continue;
+        }
+		shellmemory[frame_index].var = strdup(filename);
+		shellmemory[frame_index].value = strndup(line, strlen(line));
+        shellmemory[frame_index].accessed = ++global_access_time;
+		free(line);
+		frame_index++;
+	}
+
+	pcb->pagetable[page_index] = (frame_start) / 3;
+	pcb->pageLoaded[page_index] = true;
+	page_index++;
+    pcb->pageCounter++;
+	
 	pcb->pageFault = false;
     pcb->end = frame_index - 1;
 
