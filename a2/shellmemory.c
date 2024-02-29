@@ -14,11 +14,12 @@ const int FRAME_STORE_SIZE = 18;
 const int VAR_STORE_SIZE = 10;
 #endif
 
-#define SHELL_MEM_LENGTH (FRAME_STORE_SIZE+VAR_STORE_SIZE)
+#define SHELL_MEM_LENGTH (FRAME_STORE_SIZE + VAR_STORE_SIZE)
 
 struct memory_struct{
 	char *var;
 	char *value;
+    int accessed;
 };
 
 struct memory_struct shellmemory[SHELL_MEM_LENGTH];
@@ -26,6 +27,7 @@ struct memory_struct shellmemory[SHELL_MEM_LENGTH];
 const int FRAME_SIZE = 3;
 const int THRESHOLD = FRAME_STORE_SIZE;
 
+int global_access_time = 0;     // initialize global access time
 
 // Helper functions
 int match(char *model, char *var) {
@@ -52,12 +54,13 @@ char *extract(char *model) {
 
 // Shell memory functions
 
-void mem_init(){
-	int i;
-	for (i=0; i<SHELL_MEM_LENGTH; i++){		
-		shellmemory[i].var = "none";
-		shellmemory[i].value = "none";
-	}
+void mem_init() {
+    int i;
+    for (i = 0; i < SHELL_MEM_LENGTH; i++) {
+        shellmemory[i].var = "none";
+        shellmemory[i].value = "none";
+        shellmemory[i].accessed = 0;
+    }
 }
 
 void mem_init_variable(){
@@ -99,9 +102,7 @@ char *mem_get_value(char *var_in) {
 		} 
 	}
 	return NULL;
-
 }
-
 
 void printShellMemory(){
 	int count_empty = 0;
@@ -115,6 +116,7 @@ void printShellMemory(){
     }
 	printf("\n\t%d lines in total, %d lines in use, %d lines free\n\n", SHELL_MEM_LENGTH, SHELL_MEM_LENGTH-count_empty, count_empty);
 }
+
 int find_available_slot() {
     bool slot_found = false;
     int start_index = 0;
@@ -153,23 +155,6 @@ int find_unavailable_slot() {
     }
 }
 
-/*
- * Function:  addFileToMem 
- * 	Added in A2
- * --------------------
- * Load the source code of the file fp into the shell memory:
- * 		Loading format - var stores fileID, value stores a line
- *		Note that the first 100 lines are for set command, the rests are for run and exec command
- *
- *  pStart: This function will store the first line of the loaded file 
- * 			in shell memory in here
- *	pEnd: This function will store the last line of the loaded file 
- 			in shell memory in here
- *  fileID: Input that need to provide when calling the function, 
- 			stores the ID of the file
- * 
- * returns: error code, 21: no space left
- */
 int load_file(FILE* fp, PCB* pcb, char* filename) {
     char *line;
     size_t i = 0;
@@ -189,7 +174,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
     int lines_loaded = 0;
     bool load_next_page = true;
 
-    while (!feof(fp) && load_next_page && frame_index <THRESHOLD-2) {
+    while (!feof(fp) && load_next_page && frame_index < THRESHOLD-2) {
         size_t frame_start = frame_index;
         for (int i = 0; i < FRAME_SIZE && lines_loaded < 6; i++) {
             if (feof(fp)) {
@@ -204,6 +189,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
 
             shellmemory[frame_index].var = strdup(filename);
             shellmemory[frame_index].value = strndup(line, strlen(line));
+            shellmemory[frame_index].accessed = ++global_access_time;
             free(line);
             frame_index++;
             lines_loaded++;
@@ -241,9 +227,6 @@ int load_frame(PCB* pcb) {
 	char* filename = pcb->filename;
    // fp = pcb->file;
 	fp = fopen(filename, "r");
-	
-    
-   
 	int i;
 	for (i = 0; i < MAX_PAGES; i++) {
         if (pcb->pagetable[i] == -1) {
@@ -270,7 +253,6 @@ int load_frame(PCB* pcb) {
         return error_code;
     }
 
-
     pcb->start = frame_index;  
     pcb->PC = frame_index;
 	
@@ -293,9 +275,9 @@ int load_frame(PCB* pcb) {
             }
 			shellmemory[frame_index].var = strdup(filename);
 			shellmemory[frame_index].value = strndup(line, strlen(line));
+            shellmemory[frame_index].accessed = ++global_access_time;
 			free(line);
 			frame_index++;
-
 		}
 
 		pcb->pagetable[page_index] = (frame_start) / 3;
@@ -345,6 +327,7 @@ int remove_frame(PCB* pcb) {
             // Mark the frame as available by resetting its entry in shellmemory
             shellmemory[frame_index].var = "none";
             shellmemory[frame_index].value = "none";
+            shellmemory[frame_index].accessed = ++global_access_time;
             frame_index++;
             // Update page table and pageLoaded arrays
         }
@@ -376,6 +359,7 @@ int remove_frame(PCB* pcb) {
 
 char * mem_get_value_at_line(int index){
 	if(index<0 || index > SHELL_MEM_LENGTH) return NULL; 
+    shellmemory[index].accessed = ++global_access_time;
 	return shellmemory[index].value;
 }
 
@@ -390,5 +374,6 @@ void mem_free_lines_between(int start, int end){
 		}	
 		shellmemory[i].var = "none";
 		shellmemory[i].value = "none";
+        shellmemory[i].accessed = ++global_access_time;
 	}
 }
