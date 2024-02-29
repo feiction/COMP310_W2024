@@ -78,7 +78,6 @@ void mem_set_value(char *var_in, char *value_in) {
     for (i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
         if (strcmp(shellmemory[i].var, var_in) == 0) {
             shellmemory[i].value = strdup(value_in);
-            shellmemory[i].accessed = ++global_access_time;  // Update access time
             return;
         }
     }
@@ -87,7 +86,6 @@ void mem_set_value(char *var_in, char *value_in) {
         if (strcmp(shellmemory[i].var, "none") == 0) {
             shellmemory[i].var = strdup(var_in);
             shellmemory[i].value = strdup(value_in);
-            shellmemory[i].accessed = ++global_access_time;  // Update access time
             return;
         }
     }
