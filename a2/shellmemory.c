@@ -72,11 +72,13 @@ void mem_init_variable(){
     }
 }
 
-void mem_set_value(char *var_in, char *value_in) {  // Set key value pair
+// Set key value pair
+void mem_set_value(char *var_in, char *value_in) {
     int i;
     for (i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
         if (strcmp(shellmemory[i].var, var_in) == 0) {
             shellmemory[i].value = strdup(value_in);
+            shellmemory[i].accessed = ++global_access_time;  // Update access time
             return;
         }
     }
@@ -85,22 +87,23 @@ void mem_set_value(char *var_in, char *value_in) {  // Set key value pair
         if (strcmp(shellmemory[i].var, "none") == 0) {
             shellmemory[i].var = strdup(var_in);
             shellmemory[i].value = strdup(value_in);
+            shellmemory[i].accessed = ++global_access_time;  // Update access time
             return;
         }
     }
 }
 
-char *mem_get_value(char *var_in) {                 // Get value based on input key
+// Get value based on input key
+char *mem_get_value(char *var_in) {
     int i;
     for (i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
         if (strcmp(shellmemory[i].var, var_in) == 0) {
+            shellmemory[i].accessed = ++global_access_time;  // Update access time
             return strdup(shellmemory[i].value);
         }
     }
     return NULL;
 }
-
-// Frame store functions
 
 void mem_free_lines_between(int start, int end){
 	for (int i=start; i<=end && i<SHELL_MEM_LENGTH; i++){
@@ -359,7 +362,8 @@ int remove_frame(PCB* pcb) {
     fp = fopen(filename, "r");
     
     if (fp == NULL) {
-        return 2;       // "file could not be loaded"
+        printf("Error opening file '%s'.\n", filename);
+        return -1;
     }
     
     // Find the frame index of the first page table entry
@@ -404,3 +408,5 @@ char *mem_get_value_at_line(int index){
     shellmemory[index].accessed = ++global_access_time;
 	return shellmemory[index].value;
 }
+
+
