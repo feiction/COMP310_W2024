@@ -14,32 +14,44 @@
 bool active = false;
 bool debug = false;
 bool in_background = false;
+
+
 int count;
 int process_initialize(char *filename){
+    // Initialize file pointers
     FILE* fp;
     FILE* fp2;
     int* start = (int*)malloc(sizeof(int));
     int* end = (int*)malloc(sizeof(int));
     
+    // Open current file
     fp = fopen(filename, "rt");
     if(fp == NULL){
 		return FILE_DOES_NOT_EXIST;
     }
+
+    // Copy file to backing store
     int count = count_files_backing();
     int copy_to_backing = copyScript(filename);
     if(copy_to_backing != 0){
         return FILE_ERROR;
     }
+
+    // Close original file
     fclose(fp);
 
+    // Get file name for backing store
     char backingstore_filename[strlen(filename) + strlen(BACKING_STORE_DIR) + 1];
     strcpy(backingstore_filename, BACKING_STORE_DIR);
     char newFilename[256];
     snprintf(newFilename, sizeof(newFilename), "prog%d", count);
     strcat(backingstore_filename, newFilename);
+
+    // Open backing store file
     fp2 = fopen(backingstore_filename, "rt");
     PCB* newPCB = makePCB();
 
+    // Load file (2 pages) of backing store file
     int error_code = load_file(fp2, newPCB, backingstore_filename);
 
     if(error_code != 0){
@@ -60,15 +72,24 @@ bool execute_process(QueueNode *node, int quanta){
     char *line = NULL;
     PCB *pcb = node->pcb;
     for(int i=0; i<quanta; i++){
-        bool page_fault = pcb->currentPage > pcb->pageCounter;
+        // Check if there is page fault by checking if the current page we are reading is bigger
+        // than the page count
+        bool is_page_fault = pcb->currentPage > pcb->pageCounter;
       
-        if (page_fault) {
+        if (is_page_fault) {
+            // Load 1 frame
             int avail = load_frame(pcb);
+
+            // check error code -2, means there were no more lines to be read
+            // terminate process
             if (avail == -2){
                 in_background = false;
                 terminate_process(node);
                 return true;
             }
+
+            // check error code -1, means there was no more space in the frame store
+            // so we evict and load frame
             if (avail == -1) {
                 remove_frame(pcb);
                 load_frame(pcb);
@@ -89,9 +110,11 @@ bool execute_process(QueueNode *node, int quanta){
             return true;
         }
         in_background = false;
+
+        // if we read 3 lines (0, 1, 2) that means we read a full page, so we increment the page.
         if (pcb->currentLine == 2) {
-            pcb->currentLine = 0;
             pcb->currentPage++;
+            pcb->currentLine = 0;
         } else {
             pcb->currentLine++;
         }
@@ -183,10 +206,7 @@ void *scheduler_RR(void *arg){
         }
         cur = ready_queue_pop_head();
 
-        if(execute_process(cur, quanta)) {
-            
-        }
-        else{
+        if(!execute_process(cur, quanta)) {
             ready_queue_add_to_tail(cur);
         }
     }
