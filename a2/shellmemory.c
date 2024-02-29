@@ -63,6 +63,9 @@ void mem_init() {
     }
 }
 
+
+// Variable store functions
+
 void mem_init_variable(){
 	for (int i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
         shellmemory[i].var = "none";
@@ -70,13 +73,11 @@ void mem_init_variable(){
     }
 }
 
-// Set key value pair
-void mem_set_value(char *var_in, char *value_in) {
+void mem_set_value(char *var_in, char *value_in) {  // Set key value pair
     int i;
     for (i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
         if (strcmp(shellmemory[i].var, var_in) == 0) {
             shellmemory[i].value = strdup(value_in);
-            shellmemory[i].accessed = ++global_access_time;  // Update access time
             return;
         }
     }
@@ -85,23 +86,22 @@ void mem_set_value(char *var_in, char *value_in) {
         if (strcmp(shellmemory[i].var, "none") == 0) {
             shellmemory[i].var = strdup(var_in);
             shellmemory[i].value = strdup(value_in);
-            shellmemory[i].accessed = ++global_access_time;  // Update access time
             return;
         }
     }
 }
 
-// Get value based on input key
-char *mem_get_value(char *var_in) {
+char *mem_get_value(char *var_in) {                 // Get value based on input key
     int i;
     for (i = THRESHOLD; i < SHELL_MEM_LENGTH; i++) {
         if (strcmp(shellmemory[i].var, var_in) == 0) {
-            shellmemory[i].accessed = ++global_access_time;  // Update access time
             return strdup(shellmemory[i].value);
         }
     }
     return NULL;
 }
+
+// Frame store functions
 
 void mem_free_lines_between(int start, int end){
 	for (int i=start; i<=end && i<SHELL_MEM_LENGTH; i++){
@@ -360,8 +360,7 @@ int remove_frame(PCB* pcb) {
     fp = fopen(filename, "r");
     
     if (fp == NULL) {
-        printf("Error opening file '%s'.\n", filename);
-        return -1;
+        return 2;       // "file could not be loaded"
     }
     
     // Find the frame index of the first page table entry
@@ -406,5 +405,3 @@ char *mem_get_value_at_line(int index){
     shellmemory[index].accessed = ++global_access_time;
 	return shellmemory[index].value;
 }
-
-
