@@ -6,17 +6,24 @@
 /*
  * Struct:  PCB 
  * --------------------
- * pid: process(task) id
- * PC: program counter, stores the index of line that the task is executing
- * start: the first line in shell memory that belongs to this task
- * end: the last line in shell memory that belongs to this task
- * job_length_score: for EXEC AGING use only, stores the job length score
+ * Fields:
+ * priority - A boolean flag indicating if the process has priority status
+ * currentPage - An integer storing the current page number the process is accessing
+ * pid - An integer representing the process identifier
+ * PC - Program Counter, an integer indicating the current execution point within the process
+ * start - An integer marking the starting point of the process in memory
+ * end - An integer marking the end point of the process in memory
+ * job_length_score - An integer used for scheduling, representing the process's job length
+ * pageCounter - An integer tracking the number of pages loaded for this process
+ * currentLine - An integer indicating the current line being executed within the process
+ * pagetable - An array of integers representing the page table for the process
+ * filename - A string storing the name of the file associated with the process
+ * pageLoaded - An array of booleans indicating the loading status of each page
+ * file - A pointer to the FILE structure associated with the process's program code
  */
 typedef struct
 {
     bool priority;
-    bool pageFault;
-    bool terminated;
     int currentPage;
     int pid;
     int PC;

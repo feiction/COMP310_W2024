@@ -12,27 +12,25 @@ int generatePID(){
 
 //In this implementation, Pid is the same as file ID 
 PCB* makePCB(){
-    PCB * newPCB = malloc(sizeof(PCB));
-    newPCB->pid = generatePID();
-    newPCB->start  = 0;
-    newPCB->end = 0;
-    newPCB->PC = newPCB->start;
-    newPCB->job_length_score = 1+(newPCB->end)-(newPCB->start);
-    newPCB->priority = false;
-    newPCB->currentPage = 1;
-    newPCB->currentLine = 0;
-    newPCB->pageCounter = 0;
-    newPCB->pageFault = false;
-    newPCB->terminated = false;
-    newPCB->filename = NULL;
-    newPCB->file = NULL;
+    PCB * pcb = malloc(sizeof(PCB));
+    pcb->pid = generatePID();
+    pcb->start  = 0;
+    pcb->end = 0;
+    pcb->PC = pcb->start;
+    pcb->job_length_score = 1+(pcb->end)-(pcb->start);
+    pcb->priority = false;
+    pcb->currentPage = 1;
+    pcb->currentLine = 0;
+    pcb->pageCounter = 0;
+    pcb->filename = NULL;
+    pcb->file = NULL;
     
     for (int i = 0; i < MAX_PAGES; i++) {
-        newPCB->pagetable[i] = -1;
-        newPCB->pageLoaded[i] = false;
+        pcb->pagetable[i] = -1;
+        pcb->pageLoaded[i] = false;
     }
 
-    return newPCB;
+    return pcb;
 }
 
 int getPageIdx(PCB* pcb) {
