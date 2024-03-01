@@ -387,3 +387,20 @@ char *mem_get_value_at_line(int index){
     shellmemory[index].accessed = ++global_access_time;
 	return shellmemory[index].value;
 }
+
+void free_shell_memory()
+{
+	for (int i = 0; i < SHELL_MEM_LENGTH; i++)
+	{
+		if (shellmemory[i].var != NULL && strcmp(shellmemory[i].var, "none") != 0)
+		{
+			free(shellmemory[i].var);
+		}
+		if (shellmemory[i].value != NULL && strcmp(shellmemory[i].value, "none") != 0)
+		{
+			free(shellmemory[i].value);
+		}
+		shellmemory[i].var = "none";
+		shellmemory[i].value = "none";
+	}
+}

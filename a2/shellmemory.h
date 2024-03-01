@@ -12,4 +12,5 @@ int remove_frame(PCB* pcb);
 char * mem_get_value_at_line(int index);
 void mem_free_lines_between(int start, int end);
 void printShellMemory();
+void free_shell_memory();
 #endif
