@@ -75,11 +75,10 @@ bool execute_process(QueueNode *node, int quanta){
         // Check if there is page fault by checking if the current page we are reading is bigger
         // than the page count
         bool is_page_fault = pcb->currentPage > pcb->pageCounter;
-      
+
         if (is_page_fault) {
             // Load 1 frame
-            int load_frame_error = load_frame(pcb); // return 0 on success
-
+            int load_frame_error = load_frame(pcb);
             // check error code -2, means there were no more lines to be read
             // terminate process
             if (load_frame_error == -2){
@@ -95,6 +94,7 @@ bool execute_process(QueueNode *node, int quanta){
                 load_frame(pcb);
             }
             return false;
+            
         }
         line = mem_get_value_at_line(pcb->PC++);
         in_background = true;
@@ -199,7 +199,6 @@ void *scheduler_RR(void *arg){
 
     while(true){
         if(is_ready_empty()){
-            //printf("here");
             if(active) continue;
             else break;
              
