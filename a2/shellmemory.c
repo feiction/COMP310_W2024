@@ -1,3 +1,6 @@
+// Felicia Chen-She 261044333
+// Christine Pan 260986437
+
 #include<stdlib.h>
 #include<string.h>
 #include<stdio.h>
@@ -233,7 +236,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
 
             // Check if page completed
             if (lines_loaded % 3 == 0 || feof(fp)) {
-                pcb->pageLoaded[pcb->pageCounter] = true; // mark page as loaded
+                pcb->pagetable[pcb->pageCounter] = true; // mark page as loaded
                 pcb->pageCounter++;
 
                 // If two pages already loaded, stop loading more pages
@@ -316,7 +319,7 @@ int load_frame(PCB* pcb) {
 	}
 
     // Update PCB
-	pcb->pageLoaded[pcb->pageCounter] = true;
+	pcb->pagetable[pcb->pageCounter] = true;
     pcb->pageCounter++;
 	
     pcb->end = frame_index - 1;
@@ -368,7 +371,7 @@ int remove_frame(PCB* pcb) {
 
     printf("%s\n", "End of victim page contents.");
 
-	pcb->pageLoaded[page_index] = false;
+	pcb->pagetable[page_index] = false;
 	page_index++;
     
     fclose(fp);

@@ -1,3 +1,6 @@
+# Felicia Chen-She 261044333
+# Christine Pan 260986437
+
 CC=gcc
 CFLAGS=-g3
 

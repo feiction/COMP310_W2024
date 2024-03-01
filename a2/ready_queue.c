@@ -1,3 +1,6 @@
+// Felicia Chen-She 261044333
+// Christine Pan 260986437
+
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -12,8 +15,7 @@
 
 QueueNode *head = NULL;
 
-void ready_queue_destory()
-{
+void ready_queue_destroy() {
     if(!head) return;
     QueueNode *cur = head;
     QueueNode *tmp;
@@ -25,8 +27,7 @@ void ready_queue_destory()
     free(cur);
 }
 
-void ready_queue_add_to_tail(QueueNode *node)
-{
+void ready_queue_add_to_tail(QueueNode *node) {
     if(!head){
         head = node;
         head->next = NULL;
@@ -39,8 +40,7 @@ void ready_queue_add_to_tail(QueueNode *node)
     }
 }
 
-void ready_queue_add_to_head(QueueNode *node)
-{
+void ready_queue_add_to_head(QueueNode *node) {
     if(!head){
         head = node;
         head->next = NULL;
@@ -51,7 +51,7 @@ void ready_queue_add_to_head(QueueNode *node)
     }
 }
 
-void print_ready_queue(){
+void print_ready_queue() {
     if(!head) {
         printf("ready queue is empty\n");
         return;
@@ -65,8 +65,6 @@ void print_ready_queue(){
 }
 
 void terminate_process(QueueNode *node){
-    //node should not be in the ready queue
-    //mem_free_lines_between(node->pcb->start, node->pcb->end);
     free(node);
 }
 

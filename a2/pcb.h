@@ -1,3 +1,6 @@
+// Felicia Chen-She 261044333
+// Christine Pan 260986437
+
 #ifndef PCB_H
 #define PCB_H
 #include <stdbool.h>
@@ -32,7 +35,7 @@ typedef struct
     int pageCounter;
     int currentLine;
     char *filename;
-    bool pageLoaded[MAX_PAGES];
+    bool pagetable[MAX_PAGES];
     FILE* file;
 }PCB;
 

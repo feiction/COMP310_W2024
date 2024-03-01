@@ -1,3 +1,6 @@
+// Felicia Chen-She 261044333
+// Christine Pan 260986437
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> 
@@ -205,7 +208,7 @@ run SCRIPT.TXT		Executes the file SCRIPT.TXT\n ";
 
 int quit(){
 	printf("%s\n", "Bye!");
-	ready_queue_destory();
+	ready_queue_destroy();
 	free_shell_memory();
     remove_directory(get_backing_store_path());
 	exit(0);
@@ -255,29 +258,6 @@ int my_mkdir(char *dirname){
 	int errCode = system(command);
 	free(command);
 	return errCode;
-}
-
-// remove dir inspired by make dir
-int my_rmdir(char *dirname) {
-    char *dir = dirname;
-
-    if (dirname[0] == '$') {
-        char *value = mem_get_value(++dirname);
-        if (value == NULL || strchr(value, ' ') != NULL) {
-            return handle_error(ERROR_RMDIR);
-        }
-        dir = value;
-    }
-
-    int namelen = strlen(dir);
-    char *command = (char *)calloc(1, 7 + namelen);
-    strncat(command, "rmdir ", 7);
-    strncat(command, dir, namelen);
-    
-    int errCode = system(command);
-    free(command);
-
-    return errCode;
 }
 
 int my_touch(char* filename){

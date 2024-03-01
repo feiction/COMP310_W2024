@@ -1,3 +1,6 @@
+// Felicia Chen-She 261044333
+// Christine Pan 260986437
+
 #ifndef READY_QUEUE_H
 #define READY_QUEUE_H
 #include "pcb.h"
@@ -6,7 +9,7 @@ typedef struct QueueNode{
     PCB *pcb;
     struct QueueNode *next;
 } QueueNode;
-void ready_queue_destory();
+void ready_queue_destroy();
 void ready_queue_add_to_tail(QueueNode *node);
 void print_ready_queue();
 void terminate_process(QueueNode *node);

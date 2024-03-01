@@ -1,3 +1,6 @@
+// Felicia Chen-She 261044333
+// Christine Pan 260986437
+
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -26,7 +29,7 @@ PCB* makePCB(){
     pcb->file = NULL;
     
     for (int i = 0; i < MAX_PAGES; i++) {
-        pcb->pageLoaded[i] = false;
+        pcb->pagetable[i] = false;
     }
 
     return pcb;
