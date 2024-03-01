@@ -13,12 +13,20 @@
 
 int MAX_USER_INPUT = 1000;
 int parseInput(char ui[]);
-int my_mkdir(char *dirname);
+char backing_store_path[1000];      // stores the absolute path of backing store
+
 int main(int argc, char *argv[]) {
 
-    // Create or remove files in backing store when shell is created
+    // Create backing store folder
     system("rm -rf ./backing_store");
     mkdir("./backing_store/", 0700);
+
+    // Get the absolute path of backing_store
+    if (realpath("./backing_store/", backing_store_path) == NULL) {
+        perror("realpath");
+        exit(EXIT_FAILURE);
+    }
+
     printf("%s\n", "Shell v2.0\n");
 
     // Print the frame store size and variable store size
@@ -86,6 +94,11 @@ int parseInput(char *ui) {
     }
     errorCode = interpreter(words, w);
     return errorCode;
+}
+
+char* get_backing_store_path() {
+    // returns absolute path
+    return backing_store_path;
 }
 
 /*
