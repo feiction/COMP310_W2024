@@ -16,4 +16,7 @@ char * mem_get_value_at_line(int index);
 void mem_free_lines_between(int start, int end);
 void printShellMemory();
 void free_shell_memory();
+typedef enum { FIFO, LRU } PagePolicy;
+extern PagePolicy current_policy;
+void set_memory_policy(PagePolicy policy);
 #endif

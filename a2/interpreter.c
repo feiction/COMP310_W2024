@@ -29,7 +29,8 @@ char* error_msgs[] = {
 	"non-alphanumeric token",
 	"unknown name",
 	"cd",
-	"mkdir"
+	"mkdir",
+	"unknown policy"
 };
 
 int handle_error(enum Error error_code){
@@ -91,11 +92,11 @@ int run(char* script);
 int echo(char* var);
 int my_ls();
 int my_mkdir(char* dirname);
-int my_rmdir(char* dirname);
 int my_touch(char* filename);
 int my_cd(char* dirname);
 int exec(char *fname1, char *fname2, char *fname3); //, char* policy, bool background, bool mt);
 int resetmem();
+int set_page_policy(char* policy);
 
 // Interpret commands and their arguments
 int interpreter(char* command_args[], int args_size){
@@ -191,6 +192,12 @@ int interpreter(char* command_args[], int args_size){
 		if (args_size != 1) return handle_error(TOO_MANY_TOKENS);
 		return resetmem();
 	}
+	else if (strcmp(command_args[0], "pagepolicy") == 0) {
+		if (args_size < 2) return handle_error(TOO_FEW_TOKENS);
+		if (args_size > 2) return handle_error(TOO_MANY_TOKENS);
+		return set_page_policy(command_args[1]);
+	}
+
 	return handle_error(BAD_COMMAND);
 }
 
@@ -327,5 +334,17 @@ int exec(char *fname1, char *fname2, char *fname3) {
  */
 int resetmem() {
 	mem_init_variable();
+    return 0;
+}
+
+int set_page_policy(char* policy) {
+    if (strcmp(policy, "FIFO") == 0) {
+        set_memory_policy(FIFO);
+    } else if (strcmp(policy, "LRU") == 0) {
+        set_memory_policy(LRU);
+    } else {
+        return handle_error(12);
+    }
+    printf("Page replacement policy set to %s\n", policy);
     return 0;
 }

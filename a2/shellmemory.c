@@ -7,6 +7,7 @@
 #include<stdbool.h>
 #include <dirent.h>
 #include "pcb.h"
+#include "shellmemory.h"
 
 #if defined(FRAME_STORE_SIZE)
 #else
@@ -22,8 +23,15 @@ const int VAR_STORE_SIZE = 10;
 struct memory_struct{
 	char *var;
 	char *value;
+    int age;
     int accessed;
 };
+
+PagePolicy current_policy = LRU; // Default policy
+
+void set_memory_policy(PagePolicy policy) {
+    current_policy = policy;
+}
 
 struct memory_struct shellmemory[SHELL_MEM_LENGTH];
 
@@ -63,6 +71,7 @@ void mem_init() {
         shellmemory[i].var = "none";
         shellmemory[i].value = "none";
         shellmemory[i].accessed = 0;
+        shellmemory[i].age = 0;
     }
 }
 
@@ -117,6 +126,7 @@ void mem_free_lines_between(int start, int end){
 		shellmemory[i].var = "none";
 		shellmemory[i].value = "none";
         shellmemory[i].accessed = ++global_access_time;
+        shellmemory[i].age = global_access_time;
 	}
 }
 
@@ -179,6 +189,40 @@ int find_lru_slot() {
     return lru_index;
 }
 
+/* 
+ * Identifies the first in memory slot based on age
+ * Returns the index of the first in frame or -1 if all slots are available
+ */
+int find_fifo_slot() {
+    int fifo_index = -1;
+    int earliest_age = 9999; // Initialize a high value
+
+    for (int i = 0; i < THRESHOLD; i += FRAME_SIZE) {
+        // Check the age of the first unit in the current frame
+        int frame_age = shellmemory[i].age;
+
+        // Check each frame and find the one with the smallest age value
+        if (frame_age < earliest_age) {
+            earliest_age = frame_age;
+            fifo_index = i;
+        }
+    }
+
+    return fifo_index;
+}
+
+/* 
+ * Identifies the appropriate memory slot based on policy
+ * Returns the index of the first in frame or -1 if all slots are available
+ */
+int find_replacement_slot() {
+    if (current_policy == LRU) {
+        return find_lru_slot();
+    } else { // FIFO
+        return find_fifo_slot();
+    }
+}
+
 /*
  * Loads 2 pages a file into memory and updating a PCB for the program
  * Allocates memory frames to the process, updates the PCB's page table, and reads the file
@@ -230,6 +274,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
             shellmemory[frame_index].var = strdup(filename);
             shellmemory[frame_index].value = strndup(line, strlen(line));
             shellmemory[frame_index].accessed = ++global_access_time;
+            shellmemory[frame_index].age = global_access_time;
             free(line);
             frame_index++;
             lines_loaded++;
@@ -314,6 +359,7 @@ int load_frame(PCB* pcb) {
 		shellmemory[frame_index].var = strdup(filename);
 		shellmemory[frame_index].value = strndup(line, strlen(line));
         shellmemory[frame_index].accessed = ++global_access_time;
+        shellmemory[i].age = global_access_time;
 		free(line);
 		frame_index++;
 	}
@@ -353,7 +399,7 @@ int remove_frame(PCB* pcb) {
     }
     
     // Find the frame index of the first page table entry
-    size_t frame_index = find_lru_slot();
+    size_t frame_index = find_replacement_slot();
 	pcb->start = frame_index;
 	pcb->PC = pcb->start;
     int page_index = 0;
