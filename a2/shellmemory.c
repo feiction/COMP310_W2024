@@ -151,13 +151,13 @@ void printShellMemory(){
 int find_available_slot() {
     bool slot_found = false;
     int start_index = 0;
-    while (!slot_found && start_index < THRESHOLD-2) {
+    while (!slot_found && start_index < THRESHOLD) {
         if (strcmp(shellmemory[start_index].var, "none") == 0 &&
             strcmp(shellmemory[start_index + 1].var, "none") == 0 &&
             strcmp(shellmemory[start_index + 2].var, "none") == 0) {
             slot_found = true;
         } else {
-            start_index+=FRAME_SIZE;
+            start_index += FRAME_SIZE;
         }
     }
 
@@ -237,10 +237,7 @@ int find_replacement_slot() {
  * int - error code indicating the status of file loading operation.
  */
 int load_file(FILE* fp, PCB* pcb, char* filename) {
-    char *line;
-    size_t i = 0;
     int error_code = 0;
-    bool flag = true;
     size_t frame_index = find_available_slot();
 
     if (frame_index == -1) {
@@ -265,7 +262,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
                 break;
             }
 
-            line = calloc(1, sizeof(char) * 100);
+            char *line = calloc(1, sizeof(char) * 100);
             if (fgets(line, sizeof(char) * 100, fp) == NULL) {
                 continue;
             }
@@ -280,7 +277,7 @@ int load_file(FILE* fp, PCB* pcb, char* filename) {
             lines_loaded++;
 
             // Check if page completed
-            if (lines_loaded % 3 == 0 || feof(fp)) {
+            if (lines_loaded % FRAME_SIZE == 0 || feof(fp)) {
                 pcb->pagetable[pcb->pageCounter] = true; // mark page as loaded
                 pcb->pageCounter++;
 
@@ -322,8 +319,8 @@ int load_frame(PCB* pcb) {
 
 	fp = fopen(filename, "r");
 
-    // Skip over lines already loaded to the page table.
-	for (int i = 0; i < pcb->pageCounter*3; i++){
+    // Skip over lines already loaded to the page table
+	for (int i = 0; i < pcb->pageCounter*FRAME_SIZE; i++){
 		line = calloc(1, sizeof(char) * 100);
 		fgets(line, sizeof(char) * 100, fp);
         free(line);
@@ -359,7 +356,7 @@ int load_frame(PCB* pcb) {
 		shellmemory[frame_index].var = strdup(filename);
 		shellmemory[frame_index].value = strndup(line, strlen(line));
         shellmemory[frame_index].accessed = ++global_access_time;
-        shellmemory[i].age = global_access_time;
+        shellmemory[frame_index].age = global_access_time;
 		free(line);
 		frame_index++;
 	}
