@@ -1,12 +1,3 @@
-# Ignore all files with no extension
-*
-
-# Re-include all files that have an extension
-!*.*
-
-# Ignore all .txt files
-*.txt
-
 # Prerequisites
 *.d
 
