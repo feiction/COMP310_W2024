@@ -15,38 +15,38 @@
 #include <string.h>
 
 int copy_in(char *fname) {
-  // TODO
-  return 0;
+    // TODO
+    return 0;
 }
 
 int copy_out(char *fname) {
-  // TODO
-  return 0;
+    // TODO
+    return 0;
 }
 
 void find_file(char *pattern) {
-  // TODO
-  return;
+    // TODO
+    return;
 }
 
 void fragmentation_degree() {
-  // TODO
+    // TODO
 }
 
 int defragment() {
-  // TODO
-  return 0;
+    // TODO
+    return 0;
 }
 
 void recover(int flag) {
-  if (flag == 0) { // recover deleted inodes
+    if (flag == 0) { // recover deleted inodes
 
-    // TODO
-  } else if (flag == 1) { // recover all non-empty sectors
+        // TODO
+    } else if (flag == 1) { // recover all non-empty sectors
 
-    // TODO
-  } else if (flag == 2) { // data past end of file.
+        // TODO
+    } else if (flag == 2) { // data past end of file.
 
-    // TODO
-  }
+        // TODO
+    }
 }

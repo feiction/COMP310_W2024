@@ -18,53 +18,54 @@ PAGE *PAGE_init(int page_pid, int page_table_index);
  * @return PCB*  the pointer instance of the new PCB
  */
 PCB *PCB_init(int PID, const char *script) {
-  char line[1000];
-  PCB *new_PCB = (PCB *)malloc(sizeof(PCB));
-  new_PCB->pid = PID;
-  new_PCB->source_file = fopen(script, "rt"); // the program is in a file
-  new_PCB->size =
-      count_lines(script); // count the number of lines in the script
-  new_PCB->page_table_size = PAGE_table_size(new_PCB->size);
-  new_PCB->page_table = (PAGE **)malloc(
-      sizeof(PAGE *) *
-      new_PCB->page_table_size); // allocate a space for page table
-  for (int i = 0; i < new_PCB->page_table_size; i++) {
-    new_PCB->page_table[i] = PAGE_init(PID, i);
-  }
-
-  if (new_PCB->source_file == NULL) {
-    printf("%s: %s\n", "File not found", script);
-    exit(99);
-  }
-
-  new_PCB->program_counter =
-      (int *)calloc(new_PCB->page_table_size, sizeof(int));
-
-  // store the script in the memory
-  // only load at most 2 pages at first
-  int page_limit = 2 > new_PCB->page_table_size ? new_PCB->page_table_size : 2;
-  for (int i = 0; i < page_limit; i++) {
-    PAGE *cur_page = new_PCB->page_table[i];
-    char *pid_str = (char *)malloc(10);
-    sprintf(pid_str, "%d", new_PCB->pid);
-    if (frame_alloc(pid_str, cur_page->index, cur_page->valid_bit) == 1) {
-      printShellMemory();
-      printf("frame_alloc failed\n");
-      exit(99);
+    char line[1000];
+    PCB *new_PCB = (PCB *)malloc(sizeof(PCB));
+    new_PCB->pid = PID;
+    new_PCB->source_file = fopen(script, "rt"); // the program is in a file
+    new_PCB->size =
+        count_lines(script); // count the number of lines in the script
+    new_PCB->page_table_size = PAGE_table_size(new_PCB->size);
+    new_PCB->page_table = (PAGE **)malloc(
+        sizeof(PAGE *) *
+        new_PCB->page_table_size); // allocate a space for page table
+    for (int i = 0; i < new_PCB->page_table_size; i++) {
+        new_PCB->page_table[i] = PAGE_init(PID, i);
     }
-    for (int j = 0; j < 3; j++) {
-      if (fgets(line, 999, new_PCB->source_file) != NULL) {
-        mem_set_value_at(cur_page->index[j], pid_str, line,
-                         &cur_page->valid_bit[j]);
-        memset(line, 0, sizeof(line));
-      } else {
-        break;
-      }
-    }
-    free(pid_str);
-  }
 
-  return new_PCB;
+    if (new_PCB->source_file == NULL) {
+        printf("%s: %s\n", "File not found", script);
+        exit(99);
+    }
+
+    new_PCB->program_counter =
+        (int *)calloc(new_PCB->page_table_size, sizeof(int));
+
+    // store the script in the memory
+    // only load at most 2 pages at first
+    int page_limit =
+        2 > new_PCB->page_table_size ? new_PCB->page_table_size : 2;
+    for (int i = 0; i < page_limit; i++) {
+        PAGE *cur_page = new_PCB->page_table[i];
+        char *pid_str = (char *)malloc(10);
+        sprintf(pid_str, "%d", new_PCB->pid);
+        if (frame_alloc(pid_str, cur_page->index, cur_page->valid_bit) == 1) {
+            printShellMemory();
+            printf("frame_alloc failed\n");
+            exit(99);
+        }
+        for (int j = 0; j < 3; j++) {
+            if (fgets(line, 999, new_PCB->source_file) != NULL) {
+                mem_set_value_at(cur_page->index[j], pid_str, line,
+                                 &cur_page->valid_bit[j]);
+                memset(line, 0, sizeof(line));
+            } else {
+                break;
+            }
+        }
+        free(pid_str);
+    }
+
+    return new_PCB;
 }
 
 /**
@@ -75,25 +76,25 @@ PCB *PCB_init(int PID, const char *script) {
  * @return int
  */
 int load_PAGE(PCB *PCB, int page_index) {
-  char line[1000] = {'\0'};
-  PAGE *cur_page = PCB->page_table[page_index];
-  char *pid_str = (char *)malloc(10);
-  sprintf(pid_str, "%d", PCB->pid);
-  if (frame_alloc(pid_str, cur_page->index, cur_page->valid_bit) == 1) {
-    return 1;
-  }
-
-  for (int j = 0; j < 3; j++) {
-    if (fgets(line, 999, PCB->source_file) != NULL) {
-      mem_set_value_at(PCB->page_table[page_index]->index[j], pid_str, line,
-                       &PCB->page_table[page_index]->valid_bit[j]);
-      memset(line, 0, sizeof(line));
-    } else {
-      break;
+    char line[1000] = {'\0'};
+    PAGE *cur_page = PCB->page_table[page_index];
+    char *pid_str = (char *)malloc(10);
+    sprintf(pid_str, "%d", PCB->pid);
+    if (frame_alloc(pid_str, cur_page->index, cur_page->valid_bit) == 1) {
+        return 1;
     }
-  }
-  free(pid_str);
-  return 0;
+
+    for (int j = 0; j < 3; j++) {
+        if (fgets(line, 999, PCB->source_file) != NULL) {
+            mem_set_value_at(PCB->page_table[page_index]->index[j], pid_str,
+                             line, &PCB->page_table[page_index]->valid_bit[j]);
+            memset(line, 0, sizeof(line));
+        } else {
+            break;
+        }
+    }
+    free(pid_str);
+    return 0;
 }
 
 /**
@@ -104,30 +105,30 @@ int load_PAGE(PCB *PCB, int page_index) {
  * (0 <= n)
  */
 int count_lines(const char *script) {
-  FILE *p;
-  int count = 0;
-  int c;
-  int last = '\n';
+    FILE *p;
+    int count = 0;
+    int c;
+    int last = '\n';
 
-  // open the file
-  p = fopen(script, "r");
+    // open the file
+    p = fopen(script, "r");
 
-  // if fail to open the file, return -1
-  if (p == NULL) {
-    return -1; // fail to open the file
-  }
-
-  // iterate through the file char by char, count the number of '\n'
-  while (EOF != (c = fgetc(p))) {
-    if (c == '\n' && last != '\n') {
-      count++;
+    // if fail to open the file, return -1
+    if (p == NULL) {
+        return -1; // fail to open the file
     }
-    last = c;
-  }
 
-  // close the file and return the result
-  fclose(p);
-  return count + 1; // last line doesn't have a '\n'
+    // iterate through the file char by char, count the number of '\n'
+    while (EOF != (c = fgetc(p))) {
+        if (c == '\n' && last != '\n') {
+            count++;
+        }
+        last = c;
+    }
+
+    // close the file and return the result
+    fclose(p);
+    return count + 1; // last line doesn't have a '\n'
 }
 
 /**
@@ -136,16 +137,16 @@ int count_lines(const char *script) {
  * @param PCB
  */
 void free_PCB(PCB *PCB_data_) {
-  fclose(PCB_data_->source_file);
-  for (int i = 0; i < PCB_data_->page_table_size; i++) {
-    for (int j = 0; j < 3; j++) {
-      clear_frame(PCB_data_->page_table[i]->index[j]);
+    fclose(PCB_data_->source_file);
+    for (int i = 0; i < PCB_data_->page_table_size; i++) {
+        for (int j = 0; j < 3; j++) {
+            clear_frame(PCB_data_->page_table[i]->index[j]);
+        }
+        free(PCB_data_->page_table[i]);
     }
-    free(PCB_data_->page_table[i]);
-  }
-  free(PCB_data_->page_table);
-  free(PCB_data_->program_counter);
-  free(PCB_data_);
+    free(PCB_data_->page_table);
+    free(PCB_data_->program_counter);
+    free(PCB_data_);
 }
 
 /**
@@ -155,7 +156,7 @@ void free_PCB(PCB *PCB_data_) {
  * @return int size of the page table to be created
  */
 int PAGE_table_size(int lines) {
-  return (lines % 3 == 0) ? lines / 3 : lines / 3 + 1;
+    return (lines % 3 == 0) ? lines / 3 : lines / 3 + 1;
 }
 
 /**
@@ -166,12 +167,12 @@ int PAGE_table_size(int lines) {
  * @return PAGE*
  */
 PAGE *PAGE_init(int page_pid, int page_table_index) {
-  PAGE *page = (PAGE *)malloc(sizeof(PAGE));
-  page->page_index = page_table_index, page->page_pid = page_pid;
-  for (int i = 0; i < 3; i++) {
-    page->index[i] = 1000, page->valid_bit[i] = 0;
-  }
-  return page;
+    PAGE *page = (PAGE *)malloc(sizeof(PAGE));
+    page->page_index = page_table_index, page->page_pid = page_pid;
+    for (int i = 0; i < 3; i++) {
+        page->index[i] = 1000, page->valid_bit[i] = 0;
+    }
+    return page;
 }
 
 /**
@@ -181,14 +182,14 @@ PAGE *PAGE_init(int page_pid, int page_table_index) {
  * @param page_index
  */
 void PAGE_evict(PCB *PCB, int page_index) {
-  printf("Page fault! Victim page contents:\n");
-  for (int i = 0; i < 3; i++) {
-    printf("%s", mem_get_value_at(PCB->page_table[page_index]->index[i]));
-    mem_free_at(PCB->page_table[page_index]->index[i]);
-    PCB->page_table[page_index]->index[i] = 0;
-    PCB->page_table[page_index]->valid_bit[i] = 0;
-  }
-  printf("End of victim page contents.\n");
+    printf("Page fault! Victim page contents:\n");
+    for (int i = 0; i < 3; i++) {
+        printf("%s", mem_get_value_at(PCB->page_table[page_index]->index[i]));
+        mem_free_at(PCB->page_table[page_index]->index[i]);
+        PCB->page_table[page_index]->index[i] = 0;
+        PCB->page_table[page_index]->valid_bit[i] = 0;
+    }
+    printf("End of victim page contents.\n");
 }
 
 /**
@@ -199,8 +200,8 @@ void PAGE_evict(PCB *PCB, int page_index) {
  * @return int
  */
 int PCB_equal(const void *p1, const void *p2) {
-  PCB *p11 = (PCB *)p1, *p22 = (PCB *)p2;
-  return p11->pid == p22->pid ? 1 : 0;
+    PCB *p11 = (PCB *)p1, *p22 = (PCB *)p2;
+    return p11->pid == p22->pid ? 1 : 0;
 }
 
 /**
@@ -212,8 +213,8 @@ int PCB_equal(const void *p1, const void *p2) {
  * @return int
  */
 int PAGE_equal(const void *p1, const void *p2) {
-  PAGE *p11 = (PAGE *)p1, *p22 = (PAGE *)p2;
-  return p11->index[0] == p22->index[0] ? 1 : 0;
+    PAGE *p11 = (PAGE *)p1, *p22 = (PAGE *)p2;
+    return p11->index[0] == p22->index[0] ? 1 : 0;
 }
 
 /**
@@ -224,11 +225,10 @@ int PAGE_equal(const void *p1, const void *p2) {
  * @return int
  */
 int PCB_done(PCB *pcb) {
-  for (int i = 0; i < pcb->page_table_size; i++) {
-    if (pcb->program_counter[i] != 3) {
-      return 0;
+    for (int i = 0; i < pcb->page_table_size; i++) {
+        if (pcb->program_counter[i] != 3) {
+            return 0;
+        }
     }
-  }
-  return 1;
-
+    return 1;
 }
