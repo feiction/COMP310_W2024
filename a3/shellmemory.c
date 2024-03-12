@@ -9,38 +9,18 @@ struct memory_struct {
     char *value;
 };
 
+#define SHELL_MEM_LENGTH (FRAME_STORE_SIZE + VAR_STORE_SIZE)
+
 // 0 - FRAME_STORE_SIZE: reserved for frames
-// FRAME_STORE_SIZE - FRAME_STORE_SIZE + VAR_STORE_SIZE: reserved for variables
+// FRAME_STORE_SIZE - SHELL_MEM_LENGTH: reserved for variables
 
-struct memory_struct shellmemory[FRAME_STORE_SIZE + VAR_STORE_SIZE];
+struct memory_struct shellmemory[SHELL_MEM_LENGTH];
 int FRAME_VAR_BORDER = FRAME_STORE_SIZE;
-
-// Helper functions
-int match(char *model, char *var) {
-    int i, len = strlen(var), matchCount = 0;
-    for (i = 0; i < len; i++)
-        if (*(model + i) == *(var + i))
-            matchCount++;
-    return matchCount == len ? 1 : 0;
-}
-
-char *extract(char *model) {
-    char token = '='; // look for this to find value
-    char value[1000]; // stores the extract value
-    int i, j, len = strlen(model);
-    for (i = 0; i < len && *(model + i) != token; i++)
-        ; // loop till we get there
-    // extract the value
-    for (i = i + 1, j = 0; i < len; i++, j++)
-        value[j] = *(model + i);
-    value[j] = '\0';
-    return strdup(value);
-}
 
 // Shell memory functions
 
 void mem_init() {
-    for (int i = 0; i < FRAME_STORE_SIZE + VAR_STORE_SIZE; i++) {
+    for (int i = 0; i < SHELL_MEM_LENGTH; i++) {
         shellmemory[i].var = "none";
         shellmemory[i].value = "none";
     }
@@ -111,9 +91,7 @@ char *mem_get_value_at(int pos) { return strdup(shellmemory[pos].value); }
 
 // Set key value pair
 void mem_set_value(char *var_in, char *value_in) {
-    int i;
-
-    for (i = FRAME_VAR_BORDER; i < FRAME_STORE_SIZE + VAR_STORE_SIZE; i++) {
+    for (int i = FRAME_VAR_BORDER; i < SHELL_MEM_LENGTH; i++) {
         if (strcmp(shellmemory[i].var, var_in) == 0) {
             shellmemory[i].value = strdup(value_in);
             return;
@@ -121,7 +99,7 @@ void mem_set_value(char *var_in, char *value_in) {
     }
 
     // Value does not exist, need to find a free spot.
-    for (i = FRAME_VAR_BORDER; i < FRAME_STORE_SIZE + VAR_STORE_SIZE; i++) {
+    for (int i = FRAME_VAR_BORDER; i < SHELL_MEM_LENGTH; i++) {
         if (strcmp(shellmemory[i].var, "none") == 0) {
             shellmemory[i].var = strdup(var_in);
             shellmemory[i].value = strdup(value_in);
@@ -132,9 +110,7 @@ void mem_set_value(char *var_in, char *value_in) {
 
 // get value based on input key
 char *mem_get_value(char *var_in, char caller) {
-    int i;
-
-    for (i = FRAME_VAR_BORDER; i < FRAME_STORE_SIZE + VAR_STORE_SIZE; i++) {
+    for (int i = FRAME_VAR_BORDER; i < SHELL_MEM_LENGTH; i++) {
         if (strcmp(shellmemory[i].var, var_in) == 0) {
 
             return strdup(shellmemory[i].value);
@@ -153,7 +129,7 @@ char *mem_get_value(char *var_in, char caller) {
  *
  */
 void reset_var_zone() {
-    for (int i = FRAME_VAR_BORDER; i < FRAME_STORE_SIZE + VAR_STORE_SIZE; i++) {
+    for (int i = FRAME_VAR_BORDER; i < SHELL_MEM_LENGTH; i++) {
         mem_free_at(i);
     }
 }
@@ -171,7 +147,7 @@ void clear_frame(int start_pos) {
 
 void printShellMemory() {
     int count_empty = 0;
-    for (int i = 0; i < FRAME_STORE_SIZE + VAR_STORE_SIZE; i++) {
+    for (int i = 0; i < SHELL_MEM_LENGTH; i++) {
         if (strcmp(shellmemory[i].var, "none") == 0) {
             count_empty++;
         } else {
@@ -180,6 +156,5 @@ void printShellMemory() {
         }
     }
     printf("\n\t%d lines in total, %d lines in use, %d lines free\n\n",
-           FRAME_STORE_SIZE + VAR_STORE_SIZE,
-           FRAME_STORE_SIZE + VAR_STORE_SIZE - count_empty, count_empty);
+           SHELL_MEM_LENGTH, SHELL_MEM_LENGTH - count_empty, count_empty);
 }
