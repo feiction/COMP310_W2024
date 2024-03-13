@@ -98,12 +98,14 @@ int copy_out(char *fname) {
 
 /* checks if the given pattern is found within the content of a file */
 bool found_in_file(char *pattern, char *fname) {
+    // Open the source file in shell filesystem
     struct file *file = filesys_open(fname);
     if (!file) {
         printf("Failed to open file: %s\n", fname);
         return false;
     }
 
+    // Get file size
     int file_size = fsutil_size(fname);
     char *buffer = malloc(file_size * sizeof(char));
     if (!buffer) {
@@ -112,6 +114,7 @@ bool found_in_file(char *pattern, char *fname) {
         return false;
     }
 
+    // Read file
     if (fsutil_read(fname, buffer, file_size) != file_size) {
         printf("Error reading file: %s\n", fname);
         free(buffer);
@@ -119,9 +122,17 @@ bool found_in_file(char *pattern, char *fname) {
         return false;
     }
 
+    // Look for pattern
     if (strstr(buffer, pattern) != NULL) {
+        // Found pattern, free buffer and close file
+        free(buffer);
+        file_close(file);
         return true;
     }
+
+    // Pattern not found, free buffer and close file
+    free(buffer);
+    file_close(file);
     return false;
 }
 
@@ -133,6 +144,7 @@ void find_file(char *pattern) {
     if (dir == NULL)
         return;
 
+    // Search for pattern in every file of the directory
     while (dir_readdir(dir, name)) {
         if (found_in_file(pattern, name))
             printf("%s\n", name);
@@ -140,12 +152,147 @@ void find_file(char *pattern) {
     dir_close(dir);
 }
 
+/* checks if the given inode is fragmented */
+bool fragmented_file(struct inode *inode) {
+    size_t num_sectors = bytes_to_sectors(inode_length(inode));
+    if (num_sectors <= 1) {
+        // single sector cannot be fragmented
+        return false;
+    }
+
+    block_sector_t *sectors = get_inode_data_sectors(inode);
+    bool fragmented = false;
+
+    // Check for any non-continuous sectors (difference greater than 3)
+    for (size_t i = 0; i < num_sectors - 1; i++) {
+        // Check the condition that defines fragmentation.
+        if ((sectors[i + 1] - sectors[i]) > 3) {
+            fragmented = true;
+            break;
+        }
+    }
+
+    free(sectors);
+    return fragmented;
+}
+
 void fragmentation_degree() {
-    // TODO
+    struct dir *dir;
+    char name[NAME_MAX + 1];
+    int total_files = 0;
+    int fragmented_files = 0;
+
+    dir = dir_open_root();
+    if (dir == NULL)
+        return;
+
+    // Check for fragmented files and count total files
+    while (dir_readdir(dir, name)) {
+        struct file *file = filesys_open(name);
+        if (!file)
+            continue;
+
+        struct inode *inode = file_get_inode(file);
+        if (!inode) {
+            file_close(file);
+            continue;
+        }
+
+        if (fragmented_file(inode)) {
+            fragmented_files++;
+        }
+
+        total_files++;
+        file_close(file);
+    }
+
+    dir_close(dir);
+
+    // Calculate and print the degree of fragmentation
+    if (total_files > 0) {
+        double fragmentation_degree = (double)fragmented_files / total_files;
+        printf("%.4f\n", fragmentation_degree);
+    } else {
+        printf("No fragmentable files found.\n");
+    }
 }
 
 int defragment() {
-    // TODO
+    struct dir *dir;
+    char name[NAME_MAX + 1];
+    struct file *file;
+    struct inode *inode;
+
+    dir = dir_open_root();
+    if (dir == NULL) {
+        printf("Error: Cannot open root directory.\n");
+        return -1;
+    }
+
+    while (dir_readdir(dir, name)) {
+
+        file = filesys_open(name);
+        if (!file) {
+            continue; // file cannot be opened
+        }
+
+        inode = file_get_inode(file);
+        if (!inode) {
+            file_close(file);
+            continue; // inode cannot be retrieved
+        }
+
+        // Store file contents into memory
+        size_t file_size = inode_length(inode);
+        char *buffer = malloc(file_size);
+        if (buffer == NULL) {
+            printf("Error: Cannot allocate memory for file contents.\n");
+            file_close(file);
+            dir_close(dir);
+            return -1;
+        }
+
+        if (file_read(file, buffer, file_size) != file_size) {
+            printf("Error: Could not read complete file.\n");
+            free(buffer);
+            file_close(file);
+            continue;
+        }
+
+        file_close(file);
+
+        // Delete and recreate the file, which defragments it
+        if (!filesys_remove(name)) {
+            printf("Error: Failed to remove file during defragmentation.\n");
+            free(buffer);
+            continue;
+        }
+
+        if (!filesys_create(name, file_size, inode_is_directory(inode))) {
+            printf("Error: Failed to create file during defragmentation.\n");
+            free(buffer);
+            continue;
+        }
+
+        file = filesys_open(name);
+        if (!file) {
+            printf("Error: Failed to open newly created file.\n");
+            free(buffer);
+            continue;
+        }
+
+        if (file_write(file, buffer, file_size) != file_size) {
+            printf("Error: Could not write complete file.\n");
+            free(buffer);
+            file_close(file);
+            continue;
+        }
+
+        file_close(file);
+        free(buffer);
+    }
+
+    dir_close(dir);
     return 0;
 }
 
