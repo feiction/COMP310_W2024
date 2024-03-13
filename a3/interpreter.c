@@ -235,18 +235,18 @@ int interpreter(char *command_args[], int args_size, char *cwd) {
             size += strlen(command_args[i]);
         }
         size += (args_size - 1);
-        char *buf = malloc(size * sizeof(char));
-        memset(buf, 0, size);
+        char *buffer = malloc(size * sizeof(char));
+        memset(buffer, 0, size);
         int current_ind = 0;
         for (int i = 2; i < args_size; i++) {
-            strcpy(buf + current_ind, command_args[i]);
+            strcpy(buffer + current_ind, command_args[i]);
             current_ind += strlen(command_args[i]);
-            strcpy(buf + current_ind, " ");
+            strcpy(buffer + current_ind, " ");
             current_ind += 1;
         }
-        buf[current_ind - 1] = '\0';
-        int bytes_written = fsutil_write(command_args[1], buf, size);
-        free(buf);
+        buffer[current_ind - 1] = '\0';
+        int bytes_written = fsutil_write(command_args[1], buffer, size);
+        free(buffer);
         if (bytes_written == -1) {
             return handle_error(FILE_WRITE_ERROR);
         } else if (bytes_written != size) {
@@ -265,19 +265,19 @@ int interpreter(char *command_args[], int args_size, char *cwd) {
             size += strlen(command_args[i]);
         }
         size += (args_size - 1);
-        char *buf = malloc(size * sizeof(char));
-        memset(buf, 0, size);
+        char *buffer = malloc(size * sizeof(char));
+        memset(buffer, 0, size);
         int current_ind = 0;
         for (int i = 1; i < args_size; i++) {
-            strcpy(buf + current_ind, command_args[i]);
+            strcpy(buffer + current_ind, command_args[i]);
             current_ind += strlen(command_args[i]);
-            strcpy(buf + current_ind, " ");
+            strcpy(buffer + current_ind, " ");
             current_ind += 1;
         }
-        buf[current_ind - 1] = '\0';
+        buffer[current_ind - 1] = '\0';
 
-        find_file(buf);
-        free(buf);
+        find_file(buffer);
+        free(buffer);
         return 0;
 
     } else if (strcmp(command_args[0], "read") == 0) { // read

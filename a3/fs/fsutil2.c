@@ -96,9 +96,48 @@ int copy_out(char *fname) {
     return 0;
 }
 
+/* checks if the given pattern is found within the content of a file */
+bool found_in_file(char *pattern, char *fname) {
+    struct file *file = filesys_open(fname);
+    if (!file) {
+        printf("Failed to open file: %s\n", fname);
+        return false;
+    }
+
+    int file_size = fsutil_size(fname);
+    char *buffer = malloc(file_size * sizeof(char));
+    if (!buffer) {
+        printf("Failed to allocate memory for file contents: %s\n", fname);
+        file_close(file);
+        return false;
+    }
+
+    if (fsutil_read(fname, buffer, file_size) != file_size) {
+        printf("Error reading file: %s\n", fname);
+        free(buffer);
+        file_close(file);
+        return false;
+    }
+
+    if (strstr(buffer, pattern) != NULL) {
+        return true;
+    }
+    return false;
+}
+
 void find_file(char *pattern) {
-    // TODO
-    return;
+    struct dir *dir;
+    char name[NAME_MAX + 1];
+
+    dir = dir_open_root();
+    if (dir == NULL)
+        return;
+
+    while (dir_readdir(dir, name)) {
+        if (found_in_file(pattern, name))
+            printf("%s\n", name);
+    }
+    dir_close(dir);
 }
 
 void fragmentation_degree() {
