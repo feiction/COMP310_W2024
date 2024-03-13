@@ -298,7 +298,41 @@ int defragment() {
 
 void recover(int flag) {
     if (flag == 0) { // recover deleted inodes
-        // TODO
+        struct dir *root_dir = dir_open_root();
+        if (!root_dir) {
+            printf("Failed to open root directory for recovery.\n");
+            return;
+        }
+
+        block_sector_t start_sector = 0;
+        block_sector_t end_sector =
+            block_size(fs_device); // Get total sectors from the device
+
+        for (block_sector_t i = start_sector; i < end_sector; ++i) {
+            struct inode *inode = inode_open(i);
+
+            // Check if the inode is valid and marked as removed
+            if (inode && inode->removed) {
+                // Construct a filename based on the sector number
+                char filename[NAME_MAX + 1];
+                snprintf(filename, sizeof(filename), "recovered0-%lu",
+                         (unsigned long)i);
+
+                inode->removed = false;
+                // Write changes to the inode immediately
+                inode_write(inode, &inode->data, 0, BLOCK_SECTOR_SIZE, 0);
+
+                // Add it back to root directory with the new filename
+                if (!dir_add(root_dir, filename, i,
+                             inode_is_directory(inode))) {
+                    printf("Error: Failed to add '%s' to the root directory.\n",
+                           filename);
+                }
+            }
+            inode_close(inode);
+        }
+
+        dir_close(root_dir);
     } else if (flag == 1) { // recover all non-empty sectors
 
         // TODO
