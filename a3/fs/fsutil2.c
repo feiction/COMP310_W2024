@@ -298,7 +298,6 @@ int defragment() {
 
 void recover(int flag) {
     if (flag == 0) { // recover deleted inodes
-
         // TODO
     } else if (flag == 1) { // recover all non-empty sectors
 

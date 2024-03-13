@@ -347,12 +347,18 @@ bool dir_readdir(struct dir *dir, char name[NAME_MAX + 1]) {
     while (inode_read_at(dir->inode, &e, sizeof e, dir->pos) == sizeof e) {
         dir->pos += sizeof e;
         if (e.in_use) {
-            strncpy(name, e.name, NAME_MAX + 1);
-            return true;
+            struct inode *entry_inode = inode_open(e.inode_sector);
+            if (entry_inode != NULL && !entry_inode->removed) {
+                strncpy(name, e.name, NAME_MAX + 1);
+                inode_close(entry_inode);
+                return true;
+            }
+            inode_close(entry_inode);
         }
     }
     return false;
 }
+
 
 block_sector_t dir_readdir_inode(struct dir *dir, char name[NAME_MAX + 1]) {
     struct dir_entry e;

@@ -131,8 +131,16 @@ bool filesys_remove(const char *name) {
     split_path_filename(name, directory, file_name);
     struct dir *dir = dir_open_path(directory);
 
-    bool success = (dir != NULL && dir_remove(dir, file_name));
-    dir_close(dir);
+    bool success = false;
+    if (dir != NULL) {
+        struct inode *inode = NULL;
+        if (dir_lookup(dir, file_name, &inode) && inode != NULL) {
+            inode_remove(inode);
+            success = true;
+        }
+        inode_close(inode);
+        dir_close(dir);
+    }
 
     return success;
 }

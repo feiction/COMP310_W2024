@@ -199,6 +199,15 @@ void inode_remove(struct inode *inode) {
     inode->removed = true;
 }
 
+int recover_inode(char *file_name) {
+    struct inode *inode = get_inode_by_file_name(file_name);
+    if (inode && inode->removed) {
+        inode->removed = false;
+        return 0;
+    }
+    return -1;
+}
+
 /* Reads SIZE bytes from INODE into BUFFER, starting at position OFFSET.
    Returns the number of bytes actually read, which may be less
    than SIZE if an error occurs or end of file is reached. */
