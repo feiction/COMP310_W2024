@@ -98,19 +98,11 @@ int copy_out(char *fname) {
 
 /* checks if the given pattern is found within the content of a file */
 bool found_in_file(char *pattern, char *fname) {
-    // Open the source file in shell filesystem
-    struct file *file = filesys_open(fname);
-    if (!file) {
-        printf("Failed to open file: %s\n", fname);
-        return false;
-    }
-
     // Get file size
     int file_size = fsutil_size(fname);
     char *buffer = malloc(file_size * sizeof(char));
     if (!buffer) {
         printf("Failed to allocate memory for file contents: %s\n", fname);
-        file_close(file);
         return false;
     }
 
@@ -118,7 +110,6 @@ bool found_in_file(char *pattern, char *fname) {
     if (fsutil_read(fname, buffer, file_size) != file_size) {
         printf("Error reading file: %s\n", fname);
         free(buffer);
-        file_close(file);
         return false;
     }
 
@@ -126,13 +117,11 @@ bool found_in_file(char *pattern, char *fname) {
     if (strstr(buffer, pattern) != NULL) {
         // Found pattern, free buffer and close file
         free(buffer);
-        file_close(file);
         return true;
     }
 
     // Pattern not found, free buffer and close file
     free(buffer);
-    file_close(file);
     return false;
 }
 
