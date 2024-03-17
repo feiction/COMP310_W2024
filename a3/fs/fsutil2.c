@@ -27,27 +27,34 @@ int copy_in(char *fname) {
     long file_size = ftell(source_file);
     fseek(source_file, 0, SEEK_SET);
 
-    // Check available space in shell filesystem
-    if (fsutil_freespace() < file_size) {
-        fclose(source_file);
-        return NO_MEM_SPACE;
-    }
+    // Calculate available space and determine write size
+    long available_space = fsutil_freespace();
+    printf("%ld\n", available_space);
+    long write_size =
+        (available_space < file_size) ? available_space : file_size;
 
     // Create a new file in shell filesystem with the same name
     char *file_name = strrchr(fname, '/') ? strrchr(fname, '/') + 1 : fname;
-    if (!fsutil_create(file_name, file_size)) {
+    if (!fsutil_create(file_name, write_size)) {
         fclose(source_file);
         return FILE_CREATION_ERROR;
     }
 
     // Write the content to the new file
-    char *buffer = (char *)malloc(file_size);
-    fread(buffer, 1, file_size, source_file);
-    int bytes_written = fsutil_write(file_name, buffer, file_size);
-    if (bytes_written < file_size) {
-        printf("Warning: could only write %d out of %ld bytes (reached end of "
+    char *buffer = (char *)malloc(write_size);
+    if (buffer == NULL) {
+        fclose(source_file);
+        return NO_MEM_SPACE;
+    }
+
+    fread(buffer, 1, write_size, source_file);
+    fsutil_write(file_name, buffer, write_size);
+
+    if (write_size < file_size) {
+        // less bytes written than the file size due to limited space
+        printf("Warning: could only write %ld out of %ld bytes (reached end of "
                "file).\n",
-               bytes_written, file_size);
+               write_size, file_size);
     }
 
     // Clean up
