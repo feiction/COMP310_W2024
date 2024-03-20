@@ -5,7 +5,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
+#include "fs/block.h"
 #include "fs/filesys.h"
 #include "fs/fsutil.h"
 #include "fs/fsutil2.h"
@@ -13,6 +13,7 @@
 #include "kernel.h"
 #include "shell.h"
 #include "shellmemory.h"
+
 
 int new_name_count = 1;
 
@@ -264,7 +265,7 @@ int interpreter(char *command_args[], int args_size, char *cwd) {
         for (int i = 1; i < args_size; i++) {
             size += strlen(command_args[i]);
         }
-        size += (args_size - 1);
+        size += args_size;
         char *buffer = malloc(size * sizeof(char));
         memset(buffer, 0, size);
         int current_ind = 0;
@@ -337,7 +338,8 @@ int interpreter(char *command_args[], int args_size, char *cwd) {
         if (args_size != 1)
             return handle_error(TOO_MANY_TOKENS);
         int free_space = fsutil_freespace();
-        printf("Free space: %d\n", free_space);
+        printf("Num free sectors: %d (%d total bytes)\n", free_space,
+           free_space * BLOCK_SECTOR_SIZE);
         return 0;
 
     } else if (strcmp(command_args[0], "fragmentation_degree") ==

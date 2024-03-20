@@ -17,12 +17,12 @@
  */
 int cpu_run(int *start_pos, int *program_counter, int *size, int *valid_bit,
             char *cwd) {
-    if ((*valid_bit) == 0) {
-        return 1; // page fault
-    }
-    int ret = parseInput(mem_get_value_at(*start_pos), cwd);
-    (*program_counter)++, (*size)--;
-    return ret;
+  if ((*valid_bit) == 0) {
+    return 1; // page fault
+  }
+  int ret = parseInput(mem_get_value_at(*start_pos), cwd);
+  (*program_counter)++, (*size)--;
+  return ret;
 }
 
 /**

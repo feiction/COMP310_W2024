@@ -2,16 +2,16 @@
 #define LINKED_LIST_H
 
 typedef struct NODE {
-    void *data;
-    struct NODE *next;
-    struct NODE *prev;
+  void *data;
+  struct NODE *next;
+  struct NODE *prev;
 } NODE;
 
 typedef struct LINKED_LIST {
-    int size;
-    NODE *dummy_head;
-    NODE *dummy_tail;
-    int (*equal)(const void *a, const void *b);
+  int size;
+  NODE *dummy_head;
+  NODE *dummy_tail;
+  int (*equal)(const void *a, const void *b);
 } LINKED_LIST;
 
 int add_tail(void *data, LINKED_LIST *list);
