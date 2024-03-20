@@ -11,6 +11,7 @@
 #include "inode.h"
 #include "off_t.h"
 #include "partition.h"
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,11 +29,12 @@ int copy_in(char *fname) {
     fseek(source_file, 0, SEEK_SET);
 
     // Calculate available space and determine write size
-    long available_space = fsutil_freespace();
-    printf("%ld\n", available_space);
+    double division = (double)fsutil_freespace()/DIRECT_BLOCKS_COUNT;
+    int space_blocks = (int)(division + 1);
+    long available_space_bytes =  fsutil_freespace()*512 - (space_blocks*512);
     long write_size =
-        (available_space < file_size) ? available_space : file_size;
-
+        (file_size < available_space_bytes) ? file_size : available_space_bytes;
+   
     // Create a new file in shell filesystem with the same name
     char *file_name = strrchr(fname, '/') ? strrchr(fname, '/') + 1 : fname;
     if (!fsutil_create(file_name, write_size)) {
