@@ -169,7 +169,7 @@ bool fragmented_file(struct inode *inode) {
     // Check for any non-continuous sectors (difference greater than 3)
     for (size_t i = 0; i < num_sectors - 1; i++) {
         // Check the condition that defines fragmentation.
-        printf("sectors i+1: %d, sectors i: %d\n", sectors[i + 1], sectors[i]);
+        //printf("sectors i+1: %d, sectors i: %d\n", sectors[i + 1], sectors[i]);
         if ((sectors[i + 1] - sectors[i]) > 3) {
             fragmented = true;
             break;
