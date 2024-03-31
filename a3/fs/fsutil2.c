@@ -156,7 +156,7 @@ void find_file(char *pattern) {
 /* checks if the given inode is fragmented */
 bool fragmented_file(struct inode *inode, int print_num_sectors) {
     size_t num_sectors = bytes_to_sectors(inode_length(inode));
-    if (num_free_sectors == 1) {
+    if (print_num_sectors == 1) {
         printf("Num free sectors: %ld\n", num_sectors);
     }
 
