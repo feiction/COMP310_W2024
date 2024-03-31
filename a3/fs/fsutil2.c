@@ -84,8 +84,11 @@ int copy_out(char *fname) {
     fsutil_seek(fname, 0);
 
     // Read the content from the shell file
-    int bytes_read = fsutil_read(fname, buffer, file_size);
-
+    int bytes_read = 0;
+    char ch;
+    while (file_read(source_file, &ch, 1) == 1 && ch != '\0') {
+        buffer[bytes_read++] = ch;
+    }
     // Write the content to a new file in the host filesystem
     char *file_name = strrchr(fname, '/') ? strrchr(fname, '/') + 1 : fname;
     FILE *target_file = fopen(file_name, "wb");
