@@ -33,7 +33,7 @@ int copy_in(char *fname) {
     int space_blocks = (int)(division + 1);
     long available_space_bytes =  fsutil_freespace()*512 - (space_blocks*512);
     long write_size =
-        (file_size < available_space_bytes) ? file_size : available_space_bytes;
+        (file_size+1 < available_space_bytes) ? file_size+1 : available_space_bytes;
    
     // Create a new file in shell filesystem with the same name
     char *file_name = strrchr(fname, '/') ? strrchr(fname, '/') + 1 : fname;
