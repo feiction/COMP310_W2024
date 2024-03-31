@@ -154,9 +154,12 @@ void find_file(char *pattern) {
 }
 
 /* checks if the given inode is fragmented */
-bool fragmented_file(struct inode *inode) {
+bool fragmented_file(struct inode *inode, int print_num_sectors) {
     size_t num_sectors = bytes_to_sectors(inode_length(inode));
-    printf("Num free sectors: %ld\n", num_sectors);
+    if (num_free_sectors == 1) {
+        printf("Num free sectors: %ld\n", num_sectors);
+    }
+
     if (num_sectors <= 1) {
         // single sector cannot be fragmented
         return false;
@@ -190,6 +193,7 @@ void fragmentation_degree() {
     if (dir == NULL)
         return;
 
+    int print_num_sectors = 0;
     // Check for fragmented files and count total files
     while (dir_readdir(dir, name)) {
         struct file *file = filesys_open(name);
@@ -201,8 +205,8 @@ void fragmentation_degree() {
             file_close(file);
             continue;
         }
-
-        if (fragmented_file(inode)) {
+        print_num_sectors += 1;
+        if (fragmented_file(inode, print_num_sectors)) {
             fragmented_files++;
         }
 
