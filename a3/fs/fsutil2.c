@@ -29,12 +29,14 @@ int copy_in(char *fname) {
     fseek(source_file, 0, SEEK_SET);
 
     // Calculate available space and determine write size
-    double division = (double)fsutil_freespace()/DIRECT_BLOCKS_COUNT;
+    double division = (double)fsutil_freespace() / DIRECT_BLOCKS_COUNT;
     int space_blocks = (int)(division + 1);
-    long available_space_bytes =  fsutil_freespace()*512 - (space_blocks*512);
-    long write_size =
-        (file_size+1 < available_space_bytes) ? file_size+1 : available_space_bytes;
-   
+    long available_space_bytes =
+        fsutil_freespace() * 512 - (space_blocks * 512);
+    long write_size = (file_size + 1 < available_space_bytes)
+                          ? file_size + 1
+                          : available_space_bytes;
+
     // Create a new file in shell filesystem with the same name
     char *file_name = strrchr(fname, '/') ? strrchr(fname, '/') + 1 : fname;
     if (!fsutil_create(file_name, write_size)) {
@@ -166,13 +168,11 @@ bool fragmented_file(struct inode *inode, int print_num_sectors) {
     }
 
     block_sector_t *sectors = get_inode_data_sectors(inode);
-    //printf("sectors: %ls\n", sectors);
     bool fragmented = false;
 
     // Check for any non-continuous sectors (difference greater than 3)
     for (size_t i = 0; i < num_sectors - 1; i++) {
         // Check the condition that defines fragmentation.
-        //printf("sectors i+1: %d, sectors i: %d\n", sectors[i + 1], sectors[i]);
         if ((sectors[i + 1] - sectors[i]) > 3) {
             fragmented = true;
             break;
@@ -213,7 +213,7 @@ void fragmentation_degree() {
         total_files++;
         file_close(file);
     }
-    //printf("%d, %d\n", fragmented_files, total_files);
+    // printf("%d, %d\n", fragmented_files, total_files);
     printf("Num fragmentable files: %d\n", total_files);
     printf("Num fragmented files: %d\n", fragmented_files);
     dir_close(dir);
@@ -227,84 +227,6 @@ void fragmentation_degree() {
     }
 }
 
-/*int defragment() {
-    struct dir *dir;
-    char name[NAME_MAX + 1];
-    struct file *file;
-    struct inode *inode;
-
-    dir = dir_open_root();
-    if (dir == NULL) {
-        printf("Error: Cannot open root directory.\n");
-        return -1;
-    }
-
-    while (dir_readdir(dir, name)) {
-
-        file = filesys_open(name);
-        if (!file) {
-            continue; // file cannot be opened
-        }
-
-        inode = file_get_inode(file);
-        if (!inode) {
-            file_close(file);
-            continue; // inode cannot be retrieved
-        }
-
-        // Store file contents into memory
-        size_t file_size = inode_length(inode);
-        char *buffer = malloc(file_size);
-        if (buffer == NULL) {
-            printf("Error: Cannot allocate memory for file contents.\n");
-            file_close(file);
-            dir_close(dir);
-            return -1;
-        }
-
-        if (file_read(file, buffer, file_size) != file_size) {
-            printf("Error: Could not read complete file.\n");
-            free(buffer);
-            file_close(file);
-            continue;
-        }
-
-        file_close(file);
-
-        // Delete and recreate the file, which defragments it
-        if (!filesys_remove(name)) {
-            printf("Error: Failed to remove file during defragmentation.\n");
-            free(buffer);
-            continue;
-        }
-
-        if (!filesys_create(name, file_size, inode_is_directory(inode))) {
-            printf("Error: Failed to create file during defragmentation.\n");
-            free(buffer);
-            continue;
-        }
-
-        file = filesys_open(name);
-        if (!file) {
-            printf("Error: Failed to open newly created file.\n");
-            free(buffer);
-            continue;
-        }
-
-        if (file_write(file, buffer, file_size) != file_size) {
-            printf("Error: Could not write complete file.\n");
-            free(buffer);
-            file_close(file);
-            continue;
-        }
-
-        file_close(file);
-        free(buffer);
-    }
-
-    dir_close(dir);
-    return 0;
-}*/
 struct FileInfo {
     char *name;
     unsigned size;
@@ -314,10 +236,10 @@ struct FileInfo {
 
 struct FileInfo *file_list_head = NULL;
 
-struct FileInfo* reverse_list(struct FileInfo* head) {
-    struct FileInfo* prev = NULL;
-    struct FileInfo* current = head;
-    struct FileInfo* next = NULL;
+struct FileInfo *reverse_list(struct FileInfo *head) {
+    struct FileInfo *prev = NULL;
+    struct FileInfo *current = head;
+    struct FileInfo *next = NULL;
     while (current != NULL) {
         next = current->next;
         current->next = prev;
@@ -363,7 +285,8 @@ int defragment() {
         }
 
         //  add to linked list
-        struct FileInfo *new_file = (struct FileInfo *)malloc(sizeof(struct FileInfo));
+        struct FileInfo *new_file =
+            (struct FileInfo *)malloc(sizeof(struct FileInfo));
         new_file->name = strdup(name);
         new_file->size = file_size;
         new_file->content = buffer;
@@ -383,7 +306,7 @@ int defragment() {
     }
 
     while (dir_readdir(dir, name)) {
-        fsutil_rm(name);   
+        fsutil_rm(name);
     }
     dir_close(dir);
 
@@ -391,7 +314,7 @@ int defragment() {
 
     struct FileInfo *current = file_list_head;
     while (current != NULL) {
-        //printf("%s\n", current->name);
+        // printf("%s\n", current->name);
         fsutil_create(current->name, current->size);
         fsutil_write(current->name, current->content, current->size);
         struct FileInfo *temp = current;
@@ -400,15 +323,35 @@ int defragment() {
         free(temp->content);
         free(temp);
     }
-       
-   
+
     return 0;
 }
 
 void recover(int flag) {
     if (flag == 0) { // recover deleted inodes
+        static char recovered_name[14];
+        struct inode *inode = NULL;
 
-        // TODO
+        for (size_t i = 0; i < bitmap_size(free_map); i++) {
+            if (!bitmap_test(free_map, i)) {
+                block_sector_t sector = i;
+                inode = inode_open(sector);
+                if (inode != NULL &&
+                    inode->data.magic ==
+                        INODE_MAGIC) { // Check if inode is not NULL
+                    bitmap_flip(free_map, sector);
+                    sprintf(recovered_name, "recovered0-%d", (int)sector);
+                    if (!dir_add(dir_open_root(), recovered_name, sector,
+                                 inode->data.is_dir)) {
+                        printf("Failed to add %s\n", recovered_name);
+                    }
+                    inode_close(inode);
+                } else if (inode != NULL) { // magic doesn't match
+                    inode_close(inode);
+                }
+            }
+        }
+
     } else if (flag == 1) { // recover all non-empty sectors
 
         // TODO
