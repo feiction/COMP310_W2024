@@ -16,6 +16,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SECTOR_SIZE 512 // Assuming sector size is 512 bytes
+#define START_SECTOR 4  // Starting sector for the search
+
 int copy_in(char *fname) {
     // Open the source file in host filesystem
     FILE *source_file = fopen(fname, "rb");
@@ -284,7 +287,7 @@ int defragment() {
             continue;
         }
 
-        //  add to linked list
+        // add to linked list
         struct FileInfo *new_file =
             (struct FileInfo *)malloc(sizeof(struct FileInfo));
         new_file->name = strdup(name);
@@ -332,17 +335,17 @@ void recover(int flag) {
         static char recovered_name[14];
         struct inode *inode = NULL;
 
+        // Loop through sectors
         for (size_t i = 0; i < bitmap_size(free_map); i++) {
-            if (!bitmap_test(free_map, i)) {
+            if (!bitmap_test(free_map, i)) { // Find free sector
                 block_sector_t sector = i;
                 inode = inode_open(sector);
-                if (inode != NULL &&
-                    inode->data.magic ==
-                        INODE_MAGIC) { // Check if inode is not NULL
+
+                if (inode != NULL && inode->data.magic == INODE_MAGIC) { // Check if inode is valid
                     bitmap_flip(free_map, sector);
                     sprintf(recovered_name, "recovered0-%d", (int)sector);
-                    if (!dir_add(dir_open_root(), recovered_name, sector,
-                                 inode->data.is_dir)) {
+                    // Recover
+                    if (!dir_add(dir_open_root(), recovered_name, sector, inode->data.is_dir)) {
                         printf("Failed to add %s\n", recovered_name);
                     }
                     inode_close(inode);
@@ -353,7 +356,35 @@ void recover(int flag) {
         }
 
     } else if (flag == 1) { // recover all non-empty sectors
+        uint8_t buffer[512];
+        char filename[64];
+        FILE *fp;
 
+        for (block_sector_t sector = START_SECTOR; sector < bitmap_size(free_map); sector++) {
+            if (!bitmap_test(free_map, sector)) { // Check if the sector is marked as free
+                buffer_cache_read(sector, buffer);
+                
+                bool is_non_zero = false;
+                for (int i = 0; i < 512; i++) {
+                    if (buffer[i] != 0) {
+                        is_non_zero = true;
+                        break;
+                    }
+                }
+
+                if (is_non_zero) {
+                    sprintf(filename, "recovered1-%d.txt", sector);
+                    fp = fopen(filename, "w");
+                    if (fp != NULL) {
+                        fwrite(buffer, 512, 1, fp);
+                        fclose(fp);
+                        printf("Recovered data to %s\n", filename);
+                    } else {
+                        printf("Failed to open file %s for writing\n", filename);
+                    }
+                }
+            }
+        }
         // TODO
     } else if (flag == 2) { // data past end of file.
 
