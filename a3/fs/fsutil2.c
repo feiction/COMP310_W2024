@@ -342,35 +342,50 @@ int defragment() {
         size_t file_size = inode_length(inode);
         char *buffer = malloc(file_size);
 
+        if (file_read(file, buffer, file_size) != (int)file_size) {
+            printf("Error reading file content.\n");
+            free(buffer);
+            file_close(file);
+            continue;
+        }
+
         //  add to linked list
         struct FileInfo *new_file = (struct FileInfo *)malloc(sizeof(struct FileInfo));
         new_file->name = strdup(name);
         new_file->size = file_size;
         new_file->content = buffer;
-        if (new_file->content == NULL) {
-            printf("Error.\n");
-            exit(EXIT_FAILURE);
-        }
-        memcpy(new_file->content, buffer, file_size);
         new_file->next = file_list_head;
         file_list_head = new_file;
-        
+
         file_close(file);
-        free(buffer);
-
-        // remove file
-        fsutil_rm(new_file->name);
-
-    }
-
-    // pop linked list and write it back
-    struct FileInfo *current = file_list_head;
-    while (current != NULL) {
-        fsutil_write(current->name, current->content, current->size);
-        current = current->next;
     }
 
     dir_close(dir);
+
+    // Remove existing files
+    dir = dir_open_root();
+    if (dir == NULL) {
+        printf("Error: Cannot open root directory.\n");
+        return -1;
+    }
+
+    while (dir_readdir(dir, name)) {
+        fsutil_rm(name);   
+    }
+    dir_close(dir);
+    struct FileInfo *current = file_list_head;
+    while (current != NULL) {
+        //printf("%s\n", current->name);
+        fsutil_create(current->name, current->size);
+        fsutil_write(current->name, current->content, current->size);
+        struct FileInfo *temp = current;
+        current = current->next;
+        free(temp->name);
+        free(temp->content);
+        free(temp);
+    }
+       
+   
     return 0;
 }
 
