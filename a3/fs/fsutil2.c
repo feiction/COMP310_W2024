@@ -314,6 +314,19 @@ struct FileInfo {
 
 struct FileInfo *file_list_head = NULL;
 
+struct FileInfo* reverse_list(struct FileInfo* head) {
+    struct FileInfo* prev = NULL;
+    struct FileInfo* current = head;
+    struct FileInfo* next = NULL;
+    while (current != NULL) {
+        next = current->next;
+        current->next = prev;
+        prev = current;
+        current = next;
+    }
+    return prev;
+}
+
 int defragment() {
     struct dir *dir;
     char name[NAME_MAX + 1];
@@ -373,6 +386,9 @@ int defragment() {
         fsutil_rm(name);   
     }
     dir_close(dir);
+
+    file_list_head = reverse_list(file_list_head);
+
     struct FileInfo *current = file_list_head;
     while (current != NULL) {
         //printf("%s\n", current->name);
