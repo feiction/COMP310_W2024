@@ -16,11 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #define SECTOR_SIZE 512 // Assuming sector size is 512 bytes
 #define START_SECTOR 4  // Starting sector for the search
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
 
 int copy_in(char *fname) {
     // Open the source file in host filesystem
@@ -145,6 +142,7 @@ bool found_in_file(char *pattern, char *fname) {
     return false;
 }
 
+/* checks if the given pattern is found within the content of a file */
 void find_file(char *pattern) {
     struct dir *dir;
     char name[NAME_MAX + 1];
@@ -164,6 +162,8 @@ void find_file(char *pattern) {
 /* checks if the given inode is fragmented */
 bool fragmented_file(struct inode *inode, int print_num_sectors) {
     size_t num_sectors = bytes_to_sectors(inode_length(inode));
+
+    // Check if we should print the number of sectors
     if (print_num_sectors == 0) {
         printf("Num free sectors: %ld\n", num_sectors);
     }
@@ -189,6 +189,7 @@ bool fragmented_file(struct inode *inode, int print_num_sectors) {
     return fragmented;
 }
 
+/* checks if the given inode is fragmented */
 void fragmentation_degree() {
     struct dir *dir;
     char name[NAME_MAX + 1];
@@ -200,6 +201,7 @@ void fragmentation_degree() {
         return;
 
     int print_num_sectors = 0;
+
     // Check for fragmented files and count total files
     while (dir_readdir(dir, name)) {
         struct file *file = filesys_open(name);
@@ -219,11 +221,13 @@ void fragmentation_degree() {
         total_files++;
         file_close(file);
     }
-    // printf("%d, %d\n", fragmented_files, total_files);
-    printf("Num fragmentable files: %d\n", total_files);
-    printf("Num fragmented files: %d\n", fragmented_files);
+
     dir_close(dir);
 
+    // Print statements
+    printf("Num fragmentable files: %d\n", total_files);
+    printf("Num fragmented files: %d\n", fragmented_files);
+ 
     // Calculate and print the degree of fragmentation
     if (total_files > 0) {
         double fragmentation_degree = (double)fragmented_files / total_files;
@@ -233,6 +237,7 @@ void fragmentation_degree() {
     }
 }
 
+// Structfor a file's information: name, content and size
 struct FileInfo {
     char *name;
     unsigned size;
@@ -240,8 +245,10 @@ struct FileInfo {
     struct FileInfo *next;
 };
 
+// Head of linked list of File Info
 struct FileInfo *file_list_head = NULL;
 
+/* helper function to reverse a linked list (this is especially to get the same output as the tests) */
 struct FileInfo *reverse_list(struct FileInfo *head) {
     struct FileInfo *prev = NULL;
     struct FileInfo *current = head;
@@ -255,6 +262,7 @@ struct FileInfo *reverse_list(struct FileInfo *head) {
     return prev;
 }
 
+/* defragments; reduces number of fragmented files to zero */
 int defragment() {
     struct dir *dir;
     char name[NAME_MAX + 1];
@@ -267,17 +275,18 @@ int defragment() {
         return -1;
     }
 
+    // Loop to each file and add the information to the linked list
     while (dir_readdir(dir, name)) {
 
         file = filesys_open(name);
         if (!file) {
-            continue; // file cannot be opened
+            continue; 
         }
 
         inode = file_get_inode(file);
         if (!inode) {
             file_close(file);
-            continue; // inode cannot be retrieved
+            continue;
         }
 
         size_t file_size = inode_length(inode);
@@ -290,7 +299,7 @@ int defragment() {
             continue;
         }
 
-        // add to linked list
+        // Add to linked list
         struct FileInfo *new_file =
             (struct FileInfo *)malloc(sizeof(struct FileInfo));
         new_file->name = strdup(name);
@@ -304,23 +313,25 @@ int defragment() {
 
     dir_close(dir);
 
-    // Remove existing files
     dir = dir_open_root();
     if (dir == NULL) {
         printf("Error: Cannot open root directory.\n");
         return -1;
     }
 
+    // Remove those files with fsutil_rm
     while (dir_readdir(dir, name)) {
         fsutil_rm(name);
     }
     dir_close(dir);
 
+    // Reverse linked list
     file_list_head = reverse_list(file_list_head);
 
     struct FileInfo *current = file_list_head;
+
+    // Create each file in the list linked into the disk
     while (current != NULL) {
-        // printf("%s\n", current->name);
         fsutil_create(current->name, current->size);
         fsutil_write(current->name, current->content, current->size);
         struct FileInfo *temp = current;
@@ -335,7 +346,7 @@ int defragment() {
 
 void recover(int flag) {
     if (flag == 0) { // recover deleted inodes
-        static char recovered_name[14];
+        char recovered_name[14];
         struct inode *inode = NULL;
 
         // Loop through sectors
@@ -360,8 +371,8 @@ void recover(int flag) {
 
     } else if (flag == 1) { // recover all non-empty sectors
         uint8_t buffer[512];
-        char filename[64];
-        FILE *fp;
+        char recovered_name[64];
+        FILE *recovered_file;
 
         for (block_sector_t sector = START_SECTOR; sector < bitmap_size(free_map); sector++) {
            // Check if the sector is marked as free
@@ -376,18 +387,17 @@ void recover(int flag) {
             }
 
             if (is_non_zero) {
-                sprintf(filename, "recovered1-%d.txt", sector);
-                fp = fopen(filename, "w");
-                if (fp != NULL) {
+                sprintf(recovered_name, "recovered1-%d.txt", sector);
+                recovered_file = fopen(recovered_name, "w");
+                if (recovered_file != NULL) {
                     int i = 0;
                     while (buffer[i] != '\0' && i < 512) {
-                        fputc(buffer[i], fp);
+                        fputc(buffer[i], recovered_file);
                         i++;
                     }
-                    fclose(fp);
-                    //printf("Recovered data to %s\n", filename);
+                    fclose(recovered_file);
                 } else {
-                    printf("Failed to open file %s for writing\n", filename);
+                    printf("Failed to open file %s for writing\n", recovered_name);
                 }
             }         
         }
@@ -395,7 +405,7 @@ void recover(int flag) {
     } else if (flag == 2) {
         struct dir *dir;
         char file_name[NAME_MAX + 1];
-        char recovered_file_name[64];
+        char recovered_name[64];
         FILE *recovered_file;
 
         dir = dir_open_root();
@@ -405,14 +415,17 @@ void recover(int flag) {
         }
 
         while (dir_readdir(dir, file_name)) {
+            // Get file and inode
             struct file *file = filesys_open(file_name);
             if (!file)
                 continue;
+
             struct inode *inode = file_get_inode(file); 
             if (inode == NULL) {
                 continue; 
             }
-
+            
+            // Get the number of sectors
             size_t file_size = inode_length(inode);
             size_t num_sectors = bytes_to_sectors(file_size);
             if (num_sectors == 0) {
@@ -420,47 +433,50 @@ void recover(int flag) {
                 continue;
             }
 
+            // Get the last sector
             block_sector_t *sectors = get_inode_data_sectors(inode);
             if (sectors == NULL) {
                 inode_close(inode);
                 continue;
             }
-
             block_sector_t last_sector = sectors[num_sectors - 1];
             size_t last_block_offset = file_size % BLOCK_SECTOR_SIZE;
+
             uint8_t buffer[BLOCK_SECTOR_SIZE];
             buffer_cache_read(last_sector, buffer);
 
-            bool has_hidden_data = false;
+            // Find hidden data
+            bool hidden_data = false;
             for (size_t i = last_block_offset; i < BLOCK_SECTOR_SIZE; ++i) {
+                // Check if can find non zeroed data
                 if (buffer[i] != 0) {
-                    has_hidden_data = true;
+                    hidden_data = true;
                     break;
                 }
             }
 
-            if (has_hidden_data) {
-                sprintf(recovered_file_name, "recovered2-%s.txt", file_name);
-                recovered_file = fopen(recovered_file_name, "wb");
+            // If there is hidden data
+            if (hidden_data) {
+                // Create recovered name
+                sprintf(recovered_name, "recovered2-%s.txt", file_name);
+                recovered_file = fopen(recovered_name, "wb");
                 if (recovered_file != NULL) {
                     for (size_t i = last_block_offset; i < BLOCK_SECTOR_SIZE; ++i) {
-                        // Check if the current byte is not a null character.
+                        
+                        // Only write in characters that are not null
                         if (buffer[i] != 0) {
-                            // Write the non-null character to the recovery file.
                             fputc(buffer[i], recovered_file);
                         }
                     }
                     fclose(recovered_file);
-                    //printf("Recovered hidden data from %s\n", file_name);
+                
                 } else {
                     printf("Failed to create recovery file for %s\n", file_name);
                 }
             }
-
-            free(sectors); // Assuming get_inode_data_sectors allocates memory that should be freed.
-            inode_close(inode); // Assuming this is the correct way to close an inode.
+            free(sectors);
+            inode_close(inode);
         }
-
         dir_close(dir);
     }
 }
