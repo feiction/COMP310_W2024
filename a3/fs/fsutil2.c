@@ -391,7 +391,7 @@ void recover(int flag) {
             }         
         }
         // TODO
-    } else if (flag == 2) { // data past end of file.
+    } else if (flag == 2) {
 
         struct dir *dir = dir_open_root();
         if (!dir) {
@@ -399,46 +399,29 @@ void recover(int flag) {
             return;
         }
 
-        // Iterate through all files in the directory
         char name[NAME_MAX + 1];
         while (dir_readdir(dir, name)) {
-            // Open the file
             struct file *file = filesys_open(name);
             if (!file) {
-                continue; // Unable to open file
-            }
-
-            // Get the file size
-            off_t file_size = file_length(file);
-            if (file_size <= 0) {
-                // No need to check for hidden data in empty files
-                file_close(file);
                 continue;
             }
 
-            // Calculate the number of blocks the file spans
+            off_t file_size = file_length(file);
+
             size_t num_blocks = bytes_to_sectors(file_size);
 
             // Read the last block
             char buffer[SECTOR_SIZE];
-            off_t offset = (num_blocks - 1) * SECTOR_SIZE;
-            off_t bytes_to_read = MIN(SECTOR_SIZE, file_size % SECTOR_SIZE);
-
-            if (file_read_at(file, buffer, bytes_to_read, offset) != bytes_to_read) {
-                printf("Error: Unable to read the last block of file: %s\n", name);
+            if (file_read_at(file, buffer, SECTOR_SIZE, (num_blocks - 1) * SECTOR_SIZE) != SECTOR_SIZE) {
                 file_close(file);
                 continue;
             }
 
-            bool found_hidden_data = false;
-            for (off_t i = 0; i < bytes_to_read; i++) {
-                if (buffer[i] != 0) {
-                    found_hidden_data = true;
-                    break;
-                }
-            }
+            off_t leftover_start = file_size % SECTOR_SIZE;
+            if (leftover_start > 0 && leftover_start < SECTOR_SIZE) {
 
-            if (found_hidden_data) {
+                off_t leftover_size = SECTOR_SIZE - leftover_start;
+
                 char recovered_filename[NAME_MAX + 32];
                 sprintf(recovered_filename, "recovered2-%s.txt", name);
 
@@ -446,7 +429,7 @@ void recover(int flag) {
                 if (!recovered_file) {
                     printf("Error: Unable to create recovered file: %s\n", recovered_filename);
                 } else {
-                    fwrite(buffer, sizeof(char), bytes_to_read, recovered_file);
+                    fwrite(buffer + leftover_start, sizeof(char), leftover_size, recovered_file);
                     fclose(recovered_file);
                     printf("Recovered hidden data from file: %s\n", name);
                 }
@@ -454,7 +437,6 @@ void recover(int flag) {
 
             file_close(file);
         }
-
 
         dir_close(dir);
     }
