@@ -20,6 +20,7 @@
 #define SECTOR_SIZE 512 // Assuming sector size is 512 bytes
 #define START_SECTOR 4  // Starting sector for the search
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
 
 int copy_in(char *fname) {
     // Open the source file in host filesystem
@@ -392,61 +393,51 @@ void recover(int flag) {
         }
         // TODO
     } else if (flag == 2) {
-        struct dir *dir = dir_open_root();
-        if (!dir) {
-            printf("Error: Cannot open root directory.\n");
-            return;
-        }
-
+        struct dir *dir;
         char name[NAME_MAX + 1];
+        dir = dir_open_root();
+        if (dir == NULL) return;
+
         while (dir_readdir(dir, name)) {
-            // Open the file
             struct file *file = filesys_open(name);
-            if (!file) {
-                continue; // Unable to open file
-            }
+            if (!file) continue; 
 
             struct inode *inode = file_get_inode(file);
             if (!inode) {
                 file_close(file);
-                continue; // Unable to get inode
+                continue; 
             }
 
-            off_t file_size = inode_length(inode);
+            off_t file_size = file_length(file);
+            off_t num_sectors = DIV_ROUND_UP(file_size, BLOCK_SECTOR_SIZE);
+            off_t last_sector_index = file_size % BLOCK_SECTOR_SIZE; 
+            
+            if (last_sector_index > 0 && num_sectors > 0) {
+                block_sector_t last_sector = bytes_to_sectors(file_size - 1);
+                uint8_t buffer[BLOCK_SECTOR_SIZE];
+                buffer_cache_read(last_sector, buffer);
 
-            size_t num_sectors = bytes_to_sectors(file_size);
+                bool has_hidden_data = false;
+                for (int i = last_sector_index; i < BLOCK_SECTOR_SIZE; i++) {
+                    if (buffer[i] != 0) {
+                        has_hidden_data = true;
+                        break;
+                    }
+                }
 
-            block_sector_t start_sector = inode->sector;
-
-            char buffer[SECTOR_SIZE];
-            buffer_cache_read(start_sector + num_sectors - 1, buffer);
-
-            int start_index = file_size % SECTOR_SIZE;
-            bool found_hidden_data = false;
-            for (int i = start_index; i < SECTOR_SIZE; i++) {
-                if (buffer[i] != 0) {
-                    found_hidden_data = true;
-                    break;
+                if (has_hidden_data) {
+                    char recovered_filename[64];
+                    snprintf(recovered_filename, sizeof(recovered_filename), "recovered2-%s.txt", name);
+                    FILE *recovered_file = fopen(recovered_filename, "wb");
+                    if (recovered_file) {
+                        fwrite(&buffer[last_sector_index], 1, BLOCK_SECTOR_SIZE - last_sector_index, recovered_file);
+                        fclose(recovered_file);
+                        printf("Recovered hidden data from %s\n", name);
+                    }
                 }
             }
-
-            if (found_hidden_data) {
-                char recovered_filename[NAME_MAX + 32];
-                sprintf(recovered_filename, "recovered2-%s.txt", name);
-
-                FILE *recovered_file = fopen(recovered_filename, "wb");
-                if (!recovered_file) {
-                    printf("Error: Unable to create recovered file: %s\n", recovered_filename);
-                } else {
-                    fwrite(buffer + start_index, sizeof(char), SECTOR_SIZE - start_index, recovered_file);
-                    fclose(recovered_file);
-                    printf("Recovered hidden data from file: %s\n", name);
-                }
-            }
-
             file_close(file);
         }
-
         dir_close(dir);
     }
 }
