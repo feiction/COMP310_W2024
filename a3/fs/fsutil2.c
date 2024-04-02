@@ -374,16 +374,20 @@ void recover(int flag) {
 
             if (is_non_zero) {
                 sprintf(filename, "recovered1-%d.txt", sector);
-                copy_out(filename);
-                /*
+                //copy_out(filename);
+
                 fp = fopen(filename, "w");
                 if (fp != NULL) {
-                    fwrite(buffer, 512, 1, fp);
+                    int bytes_read = 0;
+                    char ch;
+                    while (file_read(filename, &ch, 1) == 1 && ch != '\0') {
+                        buffer[bytes_read++] = ch;
+                    }
+                    fwrite(buffer, 1, bytes_read, fp);
                     fclose(fp);
-                    printf("Recovered data to %s\n", filename);
                 } else {
                     printf("Failed to open file %s for writing\n", filename);
-                }*/
+                }
             }
             
         }
