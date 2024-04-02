@@ -392,52 +392,51 @@ void recover(int flag) {
         }
         // TODO
     } else if (flag == 2) {
-
-        struct dir *dir = dir_open_root();
-        if (!dir) {
+        struct dir* dir;
+        char name[NAME_MAX + 1];
+        struct file* file;
+        int file_size;
+        uint8_t buffer[BLOCK_SECTOR_SIZE];
+        int bytes_read;
+        
+        dir = dir_open_root();
+        if (dir == NULL) {
             printf("Error: Cannot open root directory.\n");
             return;
         }
-
-        char name[NAME_MAX + 1];
+        
         while (dir_readdir(dir, name)) {
-            struct file *file = filesys_open(name);
+            file = filesys_open(name);
             if (!file) {
                 continue;
             }
 
-            off_t file_size = file_length(file);
-
-            size_t num_blocks = bytes_to_sectors(file_size);
-
-            // Read the last block
-            char buffer[SECTOR_SIZE];
-            if (file_read_at(file, buffer, SECTOR_SIZE, (num_blocks - 1) * SECTOR_SIZE) != SECTOR_SIZE) {
-                file_close(file);
-                continue;
-            }
-
-            off_t leftover_start = file_size % SECTOR_SIZE;
-            if (leftover_start > 0 && leftover_start < SECTOR_SIZE) {
-
-                off_t leftover_size = SECTOR_SIZE - leftover_start;
-
-                char recovered_filename[NAME_MAX + 32];
-                sprintf(recovered_filename, "recovered2-%s.txt", name);
-
-                FILE *recovered_file = fopen(recovered_filename, "wb");
-                if (!recovered_file) {
-                    printf("Error: Unable to create recovered file: %s\n", recovered_filename);
-                } else {
-                    fwrite(buffer + leftover_start, sizeof(char), leftover_size, recovered_file);
-                    fclose(recovered_file);
-                    printf("Recovered hidden data from file: %s\n", name);
+            file_size = file_length(file);
+            int last_block_read_size = file_size % BLOCK_SECTOR_SIZE;
+            int overshoot = BLOCK_SECTOR_SIZE - last_block_read_size;
+            
+            if (last_block_read_size > 0) { // If the file doesn't end exactly at a block boundary.
+                file_seek(file, file_size - last_block_read_size);
+                bytes_read = file_read(file, buffer, BLOCK_SECTOR_SIZE);
+                for (int i = last_block_read_size; i < bytes_read; i++) {
+                    if (buffer[i] != 0) {
+                        char recovery_file_name[64];
+                        sprintf(recovery_file_name, "recovered2-%s.txt", name);
+                        FILE* recovery_file = fopen(recovery_file_name, "wb");
+                        if (recovery_file != NULL) {
+                            fwrite(&buffer[i], 1, bytes_read - i, recovery_file);
+                            fclose(recovery_file);
+                            //printf("Recovered hidden data from %s to %s\n", name, recovery_file_name);
+                            break; 
+                        } else {
+                            printf("Failed to open recovery file %s for writing.\n", recovery_file_name);
+                        }
+                    }
                 }
             }
-
+            
             file_close(file);
         }
-
         dir_close(dir);
-    }
+    }        
 }
