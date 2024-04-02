@@ -394,50 +394,67 @@ void recover(int flag) {
         // TODO
     } else if (flag == 2) {
         struct dir *dir;
-        char name[NAME_MAX + 1];
+        char file_name[NAME_MAX + 1];
+        char recovered_file_name[64];
+        FILE *recovered_file;
+
         dir = dir_open_root();
-        if (dir == NULL) return;
+        if (dir == NULL) {
+            printf("Error: Cannot open root directory.\n");
+            return;
+        }
 
-        while (dir_readdir(dir, name)) {
-            struct file *file = filesys_open(name);
-            if (!file) continue; 
-
-            struct inode *inode = file_get_inode(file);
-            if (!inode) {
-                file_close(file);
+        while (dir_readdir(dir, file_name)) {
+            struct file *file = filesys_open(file_name);
+            if (!file)
+                continue;
+            struct inode *inode = file_get_inode(file); 
+            if (inode == NULL) {
                 continue; 
             }
 
-            off_t file_size = file_length(file);
-            off_t last_sector_index = file_size % BLOCK_SECTOR_SIZE;
-            block_sector_t last_sector = bytes_to_sectors(file_size - 1);
-            if (last_sector_index == 0) {
-                file_close(file);
+            size_t file_size = inode_length(inode);
+            size_t num_sectors = bytes_to_sectors(file_size);
+            if (num_sectors == 0) {
+                inode_close(inode);
                 continue;
             }
 
+            block_sector_t *sectors = get_inode_data_sectors(inode);
+            if (sectors == NULL) {
+                inode_close(inode);
+                continue;
+            }
+
+            block_sector_t last_sector = sectors[num_sectors - 1];
+            size_t last_block_offset = file_size % BLOCK_SECTOR_SIZE;
             uint8_t buffer[BLOCK_SECTOR_SIZE];
             buffer_cache_read(last_sector, buffer);
 
-            char recovered_filename[64];
-            snprintf(recovered_filename, sizeof(recovered_filename), "recovered2-%s.txt", name);
-            FILE *recovered_file = fopen(recovered_filename, "wb");
-            if (recovered_file) {
-                for (off_t i = last_sector_index; i < BLOCK_SECTOR_SIZE; i++) {
-                    if (buffer[i] != '\0') { 
-                        fputc(buffer[i], recovered_file);
-                    } else {
-                        break;
-                    }
+            bool has_hidden_data = false;
+            for (size_t i = last_block_offset; i < BLOCK_SECTOR_SIZE; ++i) {
+                if (buffer[i] != 0) {
+                    has_hidden_data = true;
+                    break;
                 }
-                fclose(recovered_file);
-                printf("Recovered hidden data from %s\n", name);
-            } else {
-                printf("Failed to open %s for writing.\n", recovered_filename);
             }
-            
-            file_close(file);
+
+            if (has_hidden_data) {
+                sprintf(recovered_file_name, "recovered2-%s.txt", file_name);
+                recovered_file = fopen(recovered_file_name, "wb");
+                if (recovered_file != NULL) {
+                    fwrite(buffer + last_block_offset, 1, BLOCK_SECTOR_SIZE - last_block_offset, recovered_file);
+                    fclose(recovered_file);
+                    printf("Recovered hidden data from %s\n", file_name);
+                } else {
+                    printf("Failed to create recovery file for %s\n", file_name);
+                }
+            }
+
+            free(sectors); // Assuming get_inode_data_sectors allocates memory that should be freed.
+            inode_close(inode); // Assuming this is the correct way to close an inode.
         }
+
         dir_close(dir);
     }
 }
