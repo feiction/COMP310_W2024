@@ -410,29 +410,29 @@ void recover(int flag) {
 
             off_t file_size = file_length(file);
             off_t num_sectors = DIV_ROUND_UP(file_size, BLOCK_SECTOR_SIZE);
-            off_t last_sector_index = file_size % BLOCK_SECTOR_SIZE; 
-            
+            off_t last_sector_index = file_size % BLOCK_SECTOR_SIZE;
             if (last_sector_index > 0 && num_sectors > 0) {
                 block_sector_t last_sector = bytes_to_sectors(file_size - 1);
                 uint8_t buffer[BLOCK_SECTOR_SIZE];
                 buffer_cache_read(last_sector, buffer);
 
-                bool has_hidden_data = false;
-                for (int i = last_sector_index; i < BLOCK_SECTOR_SIZE; i++) {
-                    if (buffer[i] != 0) {
-                        has_hidden_data = true;
-                        break;
-                    }
+                off_t i = last_sector_index;
+                while (i < BLOCK_SECTOR_SIZE && buffer[i] != '\0') {
+                    i++;
                 }
 
-                if (has_hidden_data) {
+                if (i > last_sector_index) {
+                    size_t hidden_data_size = i - last_sector_index;
+
                     char recovered_filename[64];
                     snprintf(recovered_filename, sizeof(recovered_filename), "recovered2-%s.txt", name);
                     FILE *recovered_file = fopen(recovered_filename, "wb");
                     if (recovered_file) {
-                        fwrite(&buffer[last_sector_index], 1, BLOCK_SECTOR_SIZE - last_sector_index, recovered_file);
+                        fwrite(&buffer[last_sector_index], 1, hidden_data_size, recovered_file);
                         fclose(recovered_file);
-                        printf("Recovered hidden data from %s\n", name);
+                        //printf("Recovered hidden data from %s\n", name);
+                    } else {
+                        printf("Failed to open %s for writing.\n", recovered_filename);
                     }
                 }
             }
