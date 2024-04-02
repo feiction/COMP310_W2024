@@ -361,29 +361,29 @@ void recover(int flag) {
         FILE *fp;
 
         for (block_sector_t sector = START_SECTOR; sector < bitmap_size(free_map); sector++) {
-            if (!bitmap_test(free_map, sector)) { // Check if the sector is marked as free
-                buffer_cache_read(sector, buffer);
+           // Check if the sector is marked as free
+            buffer_cache_read(sector, buffer);
                 
-                bool is_non_zero = false;
-                for (int i = 0; i < 512; i++) {
-                    if (buffer[i] != 0) {
-                        is_non_zero = true;
-                        break;
-                    }
-                }
-
-                if (is_non_zero) {
-                    sprintf(filename, "recovered1-%d.txt", sector);
-                    fp = fopen(filename, "w");
-                    if (fp != NULL) {
-                        fwrite(buffer, 512, 1, fp);
-                        fclose(fp);
-                        printf("Recovered data to %s\n", filename);
-                    } else {
-                        printf("Failed to open file %s for writing\n", filename);
-                    }
+            bool is_non_zero = false;
+            for (int i = 0; i < 512; i++) {
+                if (buffer[i] != 0) {
+                    is_non_zero = true;
+                    break;
                 }
             }
+
+            if (is_non_zero) {
+                sprintf(filename, "recovered1-%d.txt", sector);
+                fp = fopen(filename, "w");
+                if (fp != NULL) {
+                    fwrite(buffer, 512, 1, fp);
+                    fclose(fp);
+                    printf("Recovered data to %s\n", filename);
+                } else {
+                    printf("Failed to open file %s for writing\n", filename);
+                }
+            }
+            
         }
         // TODO
     } else if (flag == 2) { // data past end of file.
