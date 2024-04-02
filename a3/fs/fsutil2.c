@@ -374,6 +374,8 @@ void recover(int flag) {
 
             if (is_non_zero) {
                 sprintf(filename, "recovered1-%d.txt", sector);
+                copy_out(filename);
+                /*
                 fp = fopen(filename, "w");
                 if (fp != NULL) {
                     fwrite(buffer, 512, 1, fp);
@@ -381,7 +383,7 @@ void recover(int flag) {
                     printf("Recovered data to %s\n", filename);
                 } else {
                     printf("Failed to open file %s for writing\n", filename);
-                }
+                }*/
             }
             
         }
