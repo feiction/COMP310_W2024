@@ -443,9 +443,15 @@ void recover(int flag) {
                 sprintf(recovered_file_name, "recovered2-%s.txt", file_name);
                 recovered_file = fopen(recovered_file_name, "wb");
                 if (recovered_file != NULL) {
-                    fwrite(buffer + last_block_offset, 1, BLOCK_SECTOR_SIZE - last_block_offset, recovered_file);
+                    for (size_t i = last_block_offset; i < BLOCK_SECTOR_SIZE; ++i) {
+                        // Check if the current byte is not a null character.
+                        if (buffer[i] != 0) {
+                            // Write the non-null character to the recovery file.
+                            fputc(buffer[i], recovered_file);
+                        }
+                    }
                     fclose(recovered_file);
-                    printf("Recovered hidden data from %s\n", file_name);
+                    //printf("Recovered hidden data from %s\n", file_name);
                 } else {
                     printf("Failed to create recovery file for %s\n", file_name);
                 }
