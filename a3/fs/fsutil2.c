@@ -354,8 +354,15 @@ void recover(int flag) {
             if (!bitmap_test(free_map, i)) { // Find free sector
                 block_sector_t sector = i;
                 inode = inode_open(sector);
+                block_sector_t *direct_sectors = get_inode_data_sectors(inode);
 
-                if (inode != NULL && inode->data.magic == INODE_MAGIC) { // Check if inode is valid
+                if (inode != NULL && inode->data.magic == INODE_MAGIC) {  // Check if inode is valid
+                    
+                    for (int j = 0; j < DIRECT_BLOCKS_COUNT; j++) {
+                        if (direct_sectors[j] != 0) {
+                            bitmap_flip(free_map, direct_sectors[j]);
+                        }
+                    }
                     bitmap_flip(free_map, sector);
                     sprintf(recovered_name, "recovered0-%d", (int)sector);
                     // Recover
