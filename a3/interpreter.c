@@ -1,3 +1,5 @@
+// Felicia Chen-She  - 261044333 
+// Christine Pan - 260986437
 #include <ctype.h>
 #include <dirent.h>
 #include <stdio.h>

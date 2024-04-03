@@ -1,3 +1,5 @@
+// Felicia Chen-She  - 261044333 
+// Christine Pan - 260986437
 #include "fsutil2.h"
 #include "../interpreter.h"
 #include "bitmap.h"
@@ -358,13 +360,17 @@ void recover(int flag) {
 
                 if (inode != NULL && inode->data.magic == INODE_MAGIC) {  // Check if inode is valid
                     
+                    // Flip all sectors related to the inode
                     for (int j = 0; j < DIRECT_BLOCKS_COUNT; j++) {
                         if (direct_sectors[j] != 0) {
                             bitmap_flip(free_map, direct_sectors[j]);
                         }
                     }
+
+                    // Flip inode
                     bitmap_flip(free_map, sector);
                     sprintf(recovered_name, "recovered0-%d", (int)sector);
+
                     // Recover
                     if (!dir_add(dir_open_root(), recovered_name, sector, inode->data.is_dir)) {
                         printf("Failed to add %s\n", recovered_name);
@@ -382,9 +388,10 @@ void recover(int flag) {
         FILE *recovered_file;
 
         for (block_sector_t sector = START_SECTOR; sector < bitmap_size(free_map); sector++) {
-           // Check if the sector is marked as free
+            // Check if the sector is marked as free
             buffer_cache_read(sector, buffer);
-                
+            
+            // Find any non-zero blocks
             bool is_non_zero = false;
             for (int i = 0; i < 512; i++) {
                 if (buffer[i] != 0) {
@@ -393,9 +400,11 @@ void recover(int flag) {
                 }
             }
 
+            // Recover
             if (is_non_zero) {
                 sprintf(recovered_name, "recovered1-%d.txt", sector);
                 recovered_file = fopen(recovered_name, "w");
+                // Only non null characters
                 if (recovered_file != NULL) {
                     int i = 0;
                     while (buffer[i] != '\0' && i < 512) {
@@ -408,8 +417,8 @@ void recover(int flag) {
                 }
             }         
         }
-        // TODO
-    } else if (flag == 2) {
+
+    } else if (flag == 2) { // recover data hidden past the end of a current file
         struct dir *dir;
         char file_name[NAME_MAX + 1];
         char recovered_name[64];
