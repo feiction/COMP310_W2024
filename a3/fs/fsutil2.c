@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SECTOR_SIZE 512 // Assuming sector size is 512 bytes
+#define SECTOR_SIZE 512 
 #define START_SECTOR 4  // Starting sector for the search
 
 int copy_in(char *fname) {
@@ -38,8 +38,7 @@ int copy_in(char *fname) {
     int space_blocks = (int)(division + 1);
     long available_space_bytes =
         fsutil_freespace() * 512 - (space_blocks * 512);
-    long write_size = (file_size + 1 < available_space_bytes)
-                          ? file_size + 1
+    long write_size = (file_size + 1 < available_space_bytes) ? file_size + 1
                           : available_space_bytes;
 
     // Create a new file in shell filesystem with the same name
@@ -166,21 +165,18 @@ bool fragmented_file(struct inode *inode, int print_num_sectors) {
     size_t num_sectors = bytes_to_sectors(inode_length(inode));
 
     // Check if we should print the number of sectors
-    if (print_num_sectors == 0) {
+    if (print_num_sectors == 0)
         printf("Num free sectors: %ld\n", num_sectors);
-    }
 
-    if (num_sectors <= 1) {
-        // single sector cannot be fragmented
-        return false;
-    }
+    if (num_sectors <= 1)
+        return false;       // single sector cannot be fragmented
 
     block_sector_t *sectors = get_inode_data_sectors(inode);
     bool fragmented = false;
 
     // Check for any non-continuous sectors (difference greater than 3)
     for (size_t i = 0; i < num_sectors - 1; i++) {
-        // Check the condition that defines fragmentation.
+        // Check the condition that defines fragmentation
         if ((sectors[i + 1] - sectors[i]) > 3) {
             fragmented = true;
             break;
@@ -191,7 +187,7 @@ bool fragmented_file(struct inode *inode, int print_num_sectors) {
     return fragmented;
 }
 
-/* checks if the given inode is fragmented */
+/* prints fragmentation degree */
 void fragmentation_degree() {
     struct dir *dir;
     char name[NAME_MAX + 1];
@@ -216,9 +212,10 @@ void fragmentation_degree() {
             continue;
         }
         print_num_sectors += 1;
-        if (fragmented_file(inode, print_num_sectors)) {
+
+        // Check if file is fragmented
+        if (fragmented_file(inode, print_num_sectors)) 
             fragmented_files++;
-        }
 
         total_files++;
         file_close(file);
@@ -272,18 +269,15 @@ int defragment() {
     struct inode *inode;
 
     dir = dir_open_root();
-    if (dir == NULL) {
-        printf("Error: Cannot open root directory.\n");
-        return -1;
-    }
+    if (dir == NULL) 
+        return FILE_DOES_NOT_EXIST;
 
     // Loop to each file and add the information to the linked list
     while (dir_readdir(dir, name)) {
 
         file = filesys_open(name);
-        if (!file) {
+        if (!file)
             continue; 
-        }
 
         inode = file_get_inode(file);
         if (!inode) {
@@ -302,8 +296,7 @@ int defragment() {
         }
 
         // Add to linked list
-        struct FileInfo *new_file =
-            (struct FileInfo *)malloc(sizeof(struct FileInfo));
+        struct FileInfo *new_file = (struct FileInfo *)malloc(sizeof(struct FileInfo));
         new_file->name = strdup(name);
         new_file->size = file_size;
         new_file->content = buffer;
@@ -316,10 +309,8 @@ int defragment() {
     dir_close(dir);
 
     dir = dir_open_root();
-    if (dir == NULL) {
-        printf("Error: Cannot open root directory.\n");
-        return -1;
-    }
+    if (dir == NULL)
+        return FILE_DOES_NOT_EXIST;
 
     // Remove those files with fsutil_rm
     while (dir_readdir(dir, name)) {
@@ -383,7 +374,7 @@ void recover(int flag) {
         }
 
     } else if (flag == 1) { // recover all non-empty sectors
-        uint8_t buffer[512];
+        uint8_t buffer[SECTOR_SIZE];
         char recovered_name[64];
         FILE *recovered_file;
 
@@ -393,7 +384,7 @@ void recover(int flag) {
             
             // Find any non-zero blocks
             bool is_non_zero = false;
-            for (int i = 0; i < 512; i++) {
+            for (int i = 0; i < SECTOR_SIZE; i++) {
                 if (buffer[i] != 0) {
                     is_non_zero = true;
                     break;
@@ -407,7 +398,7 @@ void recover(int flag) {
                 // Only non null characters
                 if (recovered_file != NULL) {
                     int i = 0;
-                    while (buffer[i] != '\0' && i < 512) {
+                    while (buffer[i] != '\0' && i < SECTOR_SIZE) {
                         fputc(buffer[i], recovered_file);
                         i++;
                     }
@@ -437,9 +428,8 @@ void recover(int flag) {
                 continue;
 
             struct inode *inode = file_get_inode(file); 
-            if (inode == NULL) {
-                continue; 
-            }
+            if (inode == NULL)
+                continue;
             
             // Get the number of sectors
             size_t file_size = inode_length(inode);
